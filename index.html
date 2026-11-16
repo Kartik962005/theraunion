@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1e0610" />
+  <title>Apeksha &amp; Raghav · #theRAunion · 24–26 Nov 2026, Goa</title>
+  <meta name="description" content="You are invited to the wedding of Apeksha Agrawal & Raghav Jaipuria · 24–26 November 2026 · Taj Cidade de Goa Horizon, Goa · #theRAunion" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Apeksha & Raghav · #theRAunion" />
+  <meta property="og:description" content="You're invited! 24–26 November 2026 · Taj Cidade de Goa Horizon, Goa" />
+  <meta property="og:image" content="https://theraunion.vercel.app/img/og.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%237a1626' stroke='%23d8b56a' stroke-width='3'/%3E%3Ctext x='32' y='41' font-family='Georgia' font-size='24' fill='%23f3dfa8' text-anchor='middle'%3EAR%3C/text%3E%3C/svg%3E" />
+</head>
+<body class="is-locked">
+
+  <!-- ================= GATE ================= -->
+  <div id="gate" aria-label="Invitation cover">
+    <div class="gate__door gate__door--l"><div class="door__panel"><div class="door__rangoli" data-rangoli="door"></div><span class="door__ring"></span></div></div>
+    <div class="gate__door gate__door--r"><div class="door__panel"><div class="door__rangoli" data-rangoli="door"></div><span class="door__ring"></span></div></div>
+    <div class="gate__toran" data-toran></div>
+    <div class="gate__center">
+      <p class="gate__mantra deva">॥ श्री गणेशाय नमः ॥</p>
+      <div class="gate__seal-row">
+        <span data-diya></span>
+        <button id="seal" class="seal" aria-label="Open the invitation" disabled>
+          <span class="seal__ring"></span>
+          <span class="seal__mono">A<i>&amp;</i>R</span>
+        </button>
+        <span data-diya></span>
+      </div>
+      <p class="gate__hint" id="gateHint">Preparing your invitation…</p>
+      <p class="gate__tag">#theRAunion</p>
+    </div>
+  </div>
+
+  <canvas id="gl" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="progress" aria-hidden="true"><i></i></div>
+
+  <main>
+
+    <!-- ================= PALACE JOURNEY (pinned 3D) ================= -->
+    <section class="journey" id="journey">
+      <canvas id="palace" aria-hidden="true"></canvas>
+      <div class="journey__vignette"></div>
+
+      <div class="jx jx--1">
+        <div class="jx__mandala" data-linemandala></div>
+        <p class="jx__om deva">॥ श्री गणेशाय नमः ॥</p>
+        <p class="jx__shloka deva">वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ ।<br />निर्विघ्नं कुरु मे देव सर्वकार्येषु सर्वदा ॥</p>
+        <p class="jx__hint">Scroll to step inside</p>
+      </div>
+
+      <div class="jx jx--2">
+        <p class="eyebrow light">With the blessings of our elders</p>
+        <h1 class="jx__names">
+          <span class="script" data-split>Apeksha</span>
+          <span class="jx__amp">&amp;</span>
+          <span class="script" data-split>Raghav</span>
+        </h1>
+        <p class="jx__deva deva">अपेक्षा <span>संग</span> राघव</p>
+      </div>
+
+      <div class="jx jx--3">
+        <p class="jx__lead">request the honour of your presence<br />as they begin their forever</p>
+        <div class="jx__dates"><span>24</span><i></i><span>25</span><i></i><span>26</span></div>
+        <p class="jx__month">November · 2026</p>
+      </div>
+
+      <div class="jx jx--4">
+        <p class="eyebrow light">At the edge of the Arabian Sea</p>
+        <h2 class="jx__venue">Taj Cidade de Goa<br /><em>Horizon</em></h2>
+        <p class="jx__place">Dona Paula · Goa</p>
+      </div>
+
+      <div class="journey__cue"><span></span>Scroll</div>
+    </section>
+
+    <!-- ================= INVITATION ================= -->
+    <section class="invite paper">
+      <div class="corner corner--tl" data-paisley></div>
+      <div class="corner corner--tr" data-paisley></div>
+      <div class="corner corner--bl" data-paisley></div>
+      <div class="corner corner--br" data-paisley></div>
+      <div class="invite__rangoli" data-rangoli="invite"></div>
+      <p class="eyebrow">Shubh Vivah · शुभ विवाह</p>
+      <p class="invite__lead fade-words">With the blessings of the Almighty and our elders, the Agrawal and Jaipuria families request the pleasure of your company as their children begin a lifetime together.</p>
+      <div class="couple">
+        <div class="couple__card">
+          <div class="couple__photo"><img src="/img/portrait-raghav.webp" alt="Raghav" loading="lazy" /></div>
+          <p class="couple__role">The Groom</p>
+          <h2 class="couple__name">Raghav<small>Jaipuria</small></h2>
+        </div>
+        <div class="couple__knot" aria-hidden="true">
+          <svg viewBox="0 0 120 120"><g fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="45" cy="64" r="26"/><circle cx="75" cy="64" r="26"/><path d="M60 18l3 6 6 1-4.5 4 1 6-5.5-3-5.5 3 1-6-4.5-4 6-1z" fill="currentColor"/></g></svg>
+        </div>
+        <div class="couple__card">
+          <div class="couple__photo"><img src="/img/portrait-apeksha.webp" alt="Apeksha" loading="lazy" /></div>
+          <p class="couple__role">The Bride</p>
+          <h2 class="couple__name">Apeksha<small>Agrawal</small></h2>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= ARCH REVEAL ================= -->
+    <section class="arch" id="arch">
+      <div class="arch__stage">
+        <div class="arch__frame">
+          <img src="/img/drone-md.webp" srcset="/img/drone-md.webp 1280w, /img/drone.webp 2400w" sizes="100vw" alt="Apeksha and Raghav waving from a car sunroof, seen from above" />
+        </div>
+        <div class="arch__text">
+          <p class="eyebrow light">Two hearts</p>
+          <h2 class="display light">One road ahead</h2>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SAPTAPADI (pinned) ================= -->
+    <section class="vows" id="vows">
+      <div class="vows__stage">
+        <div class="vows__head">
+          <p class="eyebrow light">Saptapadi · सप्तपदी</p>
+          <h2 class="display light">Seven steps,<br /><em>seven promises</em></h2>
+        </div>
+        <div class="agni">
+          <svg class="agni__ring" viewBox="0 0 300 300" aria-hidden="true">
+            <circle class="agni__track" cx="150" cy="150" r="130" />
+            <circle class="agni__trail" cx="150" cy="150" r="130" />
+            <g class="agni__nodes"></g>
+            <g class="agni__couple"><circle r="7" /><circle r="7" /></g>
+          </svg>
+          <div class="agni__fire" aria-hidden="true">
+            <div class="flame f1"></div><div class="flame f2"></div><div class="flame f3"></div><div class="flame f4"></div>
+            <div class="sparks"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="kund"></div>
+          </div>
+        </div>
+        <div class="vows__text">
+          <div class="vow-num deva" id="vowNum">१</div>
+          <div class="vow-slides" id="vowSlides"></div>
+        </div>
+        <p class="vows__shloka deva">धर्मे च अर्थे च कामे च नातिचरामि</p>
+      </div>
+    </section>
+
+    <!-- ================= GALLERY ================= -->
+    <section class="gallery" id="gallery">
+      <div class="gallery__toran" data-toran></div>
+      <div class="gallery__head">
+        <p class="eyebrow light">Moments</p>
+        <h2 class="display light">Before forever</h2>
+      </div>
+      <div class="gallery__track">
+        <figure class="gcard"><img src="/img/garden-walk-md.webp" srcset="/img/garden-walk-md.webp 1280w, /img/garden-walk.webp 2400w" sizes="(max-width:760px) 70vw, 340px" alt="" loading="lazy" /><figcaption>Hand in hand</figcaption></figure>
+        <figure class="gcard"><img src="/img/noodles-md.webp" srcset="/img/noodles-md.webp 1280w, /img/noodles.webp 2400w" sizes="(max-width:760px) 70vw, 340px" alt="" loading="lazy" /><figcaption>Every meal, together</figcaption></figure>
+        <figure class="gcard gcard--wide"><img src="/img/twirl-md.webp" srcset="/img/twirl-md.webp 1280w, /img/twirl.webp 2400w" sizes="(max-width:760px) 86vw, 480px" alt="" loading="lazy" /><figcaption>The twirl</figcaption></figure>
+        <figure class="gcard"><img src="/img/window-md.webp" srcset="/img/window-md.webp 1280w, /img/window.webp 2400w" sizes="(max-width:760px) 70vw, 340px" alt="" loading="lazy" /><figcaption>That smile</figcaption></figure>
+        <figure class="gcard gcard--wide"><img src="/img/swing-md.webp" srcset="/img/swing-md.webp 1280w, /img/swing.webp 2400w" sizes="(max-width:760px) 86vw, 480px" alt="" loading="lazy" /><figcaption>Swing-side stories</figcaption></figure>
+        <figure class="gcard"><img src="/img/heritage-md.webp" srcset="/img/heritage-md.webp 1280w, /img/heritage.webp 2400w" sizes="(max-width:760px) 70vw, 340px" alt="" loading="lazy" /><figcaption>Old walls, new beginnings</figcaption></figure>
+        <figure class="gcard"><img src="/img/bw-md.webp" srcset="/img/bw-md.webp 1280w, /img/bw.webp 2400w" sizes="(max-width:760px) 70vw, 340px" alt="" loading="lazy" /><figcaption>Nose to nose</figcaption></figure>
+        <figure class="gcard gcard--wide"><img src="/img/hug-md.webp" srcset="/img/hug-md.webp 1280w, /img/hug.webp 2400w" sizes="(max-width:760px) 86vw, 480px" alt="" loading="lazy" /><figcaption>Partners in crime</figcaption></figure>
+      </div>
+      <div class="gallery__progress"><span></span></div>
+    </section>
+
+    <!-- ================= FILM ================= -->
+    <section class="film" id="film">
+      <p class="eyebrow light">A little film</p>
+      <h2 class="display light">To the beginning of<br /><em>everything beautiful</em></h2>
+      <div class="film__frame">
+        <video id="filmVideo" preload="none" playsinline poster="/media/film-poster.jpg"></video>
+        <button class="film__play" id="filmPlay" aria-label="Play the pre-wedding film"><span></span></button>
+      </div>
+      <p class="film__meta">Pre-wedding film · 2 min 56 s · sound on 🔊</p>
+    </section>
+
+    <!-- ================= COUNTDOWN ================= -->
+    <section class="countdown paper">
+      <div class="countdown__diyas"><span data-diya></span><span data-diya></span><span data-diya></span></div>
+      <p class="eyebrow">Counting down to the pheras</p>
+      <div class="cd" id="countdown">
+        <div class="cd__cell"><b data-cd="d">00</b><span>Days</span></div>
+        <div class="cd__cell"><b data-cd="h">00</b><span>Hours</span></div>
+        <div class="cd__cell"><b data-cd="m">00</b><span>Minutes</span></div>
+        <div class="cd__cell"><b data-cd="s">00</b><span>Seconds</span></div>
+      </div>
+      <p class="cd__done" hidden>They're married! Thank you for your blessings.</p>
+    </section>
+
+    <!-- ================= SCHEDULE ================= -->
+    <section class="schedule" id="schedule">
+      <div class="schedule__head">
+        <p class="eyebrow light">The celebrations · उत्सव</p>
+        <h2 class="display light">Three days of joy</h2>
+        <p class="schedule__sub">All events at Taj Cidade de Goa Horizon</p>
+      </div>
+      <div id="days"></div>
+      <div class="schedule__actions">
+        <a class="btn btn--gold" id="icsBtn" download="Apeksha-Raghav-Wedding.ics">Save all dates to calendar</a>
+      </div>
+    </section>
+
+    <!-- ================= VENUE ================= -->
+    <section class="venue paper" id="venue">
+      <p class="eyebrow">The venue</p>
+      <h2 class="display">Taj Cidade de Goa<br /><em>Horizon</em></h2>
+      <p class="venue__addr">Vainguinim Plateau, Dona Paula<br />Panaji, Goa 403004</p>
+      <p class="venue__note">Where the Mandovi and Zuari rivers meet the Arabian Sea</p>
+      <div class="venue__sea" aria-hidden="true">
+        <div class="sun"></div>
+        <svg class="boat" viewBox="0 0 80 50"><path d="M6 34 Q40 46 74 34 L66 42 Q40 50 14 42Z" fill="#5a0f1f"/><path d="M40 4 L40 34 M40 6 L62 30 L40 30Z" stroke="#5a0f1f" stroke-width="1.5" fill="#f6e4b0"/></svg>
+        <svg class="wave w1" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0 60 Q150 20 300 60 T600 60 T900 60 T1200 60 V120 H0Z"/></svg>
+        <svg class="wave w2" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0 70 Q150 35 300 70 T600 70 T900 70 T1200 70 V120 H0Z"/></svg>
+        <svg class="wave w3" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0 80 Q150 50 300 80 T600 80 T900 80 T1200 80 V120 H0Z"/></svg>
+      </div>
+      <a class="btn btn--maroon" href="https://www.google.com/maps/search/?api=1&query=Taj+Cidade+de+Goa+Horizon+Dona+Paula+Goa" target="_blank" rel="noopener">Open in Google Maps</a>
+    </section>
+
+    <!-- ================= HASHTAG ================= -->
+    <section class="tag" id="tag">
+      <div class="tag__rangoli" data-rangoli="tag"></div>
+      <p class="eyebrow light">Share the love</p>
+      <h2 class="tag__word" id="hashtag">#theRAunion</h2>
+      <p class="tag__sub">Post your photos and stories with our hashtag</p>
+      <div class="tag__btns">
+        <button class="btn btn--ghost" id="copyTag">Copy hashtag</button>
+        <button class="btn btn--gold" id="shareBtn">Share invitation</button>
+      </div>
+    </section>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="foot paper">
+      <div class="foot__toran" data-toran></div>
+      <div class="foot__mono">A<i>&amp;</i>R</div>
+      <p class="foot__line">We can't wait to celebrate with you.</p>
+      <p class="foot__fam">With love,<br />The Agrawal &amp; Jaipuria families</p>
+      <p class="foot__tag">#theRAunion</p>
+    </footer>
+  </main>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
