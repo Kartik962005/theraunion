@@ -114,14 +114,28 @@
     <!-- ================= SAPTAPADI ================= -->
     <section class="vows" id="vows">
       <div class="vows__stage">
-        <canvas id="fire" aria-hidden="true"></canvas>
         <div class="vows__head">
           <p class="eyebrow light">Saptapadi · सप्तपदी</p>
-          <h2 class="display light">Seven steps, <em>seven promises</em></h2>
-          <div class="vows__lamps" id="vowLamps"></div>
+          <h2 class="display light">Seven steps,<br /><em>seven promises</em></h2>
         </div>
-        <div class="vcards" id="vcards"></div>
-        <div class="vows__count"><span id="vowIdx">01</span><i></i><span>07</span></div>
+        <div class="agni">
+          <svg class="agni__ring" viewBox="0 0 300 300" aria-hidden="true">
+            <circle class="agni__track" cx="150" cy="150" r="130" />
+            <circle class="agni__trail" cx="150" cy="150" r="130" />
+            <g class="agni__nodes"></g>
+            <g class="agni__couple"><circle r="7" /><circle r="7" /></g>
+          </svg>
+          <div class="agni__fire" aria-hidden="true">
+            <div class="flame f1"></div><div class="flame f2"></div><div class="flame f3"></div><div class="flame f4"></div>
+            <div class="sparks"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="kund"></div>
+          </div>
+        </div>
+        <div class="vows__text">
+          <div class="vow-num deva" id="vowNum">१</div>
+          <div class="vow-slides" id="vowSlides"></div>
+        </div>
+        <p class="vows__shloka deva">धर्मे च अर्थे च कामे च नातिचरामि</p>
       </div>
     </section>
 
@@ -185,9 +199,7 @@
       <p class="eyebrow light">The venue</p>
       <h2 class="display light">Taj Cidade de Goa <em>Horizon</em></h2>
       <p class="venue__addr">Vainguinim Plateau, Dona Paula, Panaji, Goa 403004</p>
-      <div class="venue__map">
-        <iframe title="Map to Taj Cidade de Goa Horizon" loading="lazy" referrerpolicy="no-referrer-when-downgrade" data-src="https://maps.google.com/maps?q=Taj%20Cidade%20de%20Goa%20Horizon%2C%20Dona%20Paula%2C%20Goa&z=15&output=embed"></iframe>
-      </div>
+      <figure class="venue__photo"><img src="/img/hotel.webp" alt="Taj Cidade de Goa Horizon, Dona Paula, Goa" loading="lazy" /></figure>
       <a class="btn btn--gold" href="https://www.google.com/maps/search/?api=1&query=Taj+Cidade+de+Goa+Horizon+Dona+Paula+Goa" target="_blank" rel="noopener">Open in Google Maps</a>
     </section>
 

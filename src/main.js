@@ -11,7 +11,7 @@ import './style.css';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
-import { createBokeh, createFire } from './gl.js';
+import { createBokeh } from './gl.js';
 import { DAYS, VOWS, WEDDING_MOMENT } from './data.js';
 import { lineMandala } from './ornaments.js';
 
@@ -22,7 +22,12 @@ const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const isMobile = matchMedia('(max-width: 760px)').matches;
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+const DEVA = ['१', '२', '३', '४', '५', '६', '७'];
+
+/* always start at the top (browsers otherwise restore the last scroll spot) */
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+window.scrollTo(0, 0);
+addEventListener('pageshow', () => window.scrollTo(0, 0));
 
 /* ---------- stable viewport height ---------- */
 const setVH = () => document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
@@ -105,17 +110,14 @@ $('#days').innerHTML = DAYS.map(d => `
   tick();
 })();
 
-/* ---------- vows: cards + lamps ---------- */
-$('#vcards').innerHTML = VOWS.map((v, i) => `
-  <div class="vcard" style="z-index:${20 - i}">
-    <div class="vcard__face">
-      <div class="vcard__num foil">${ROMAN[i]}</div>
-      <div class="vcard__hi">${v.hi}</div>
-      <div class="vcard__rule"></div>
-      <p class="vcard__en">${v.en}</p>
-    </div>
-  </div>`).join('');
-$('#vowLamps').innerHTML = VOWS.map(() => '<span class="lamp"></span>').join('');
+/* ---------- vows DOM ---------- */
+$('#vowSlides').innerHTML = VOWS.map(v => `<div class="vow"><b>${v.hi}</b><p>${v.en}</p></div>`).join('');
+const nodesG = $('.agni__nodes');
+VOWS.forEach((_, i) => {
+  const a = (-90 + (i / 7) * 360) * Math.PI / 180;
+  const x = 150 + Math.cos(a) * 130, y = 150 + Math.sin(a) * 130;
+  nodesG.insertAdjacentHTML('beforeend', `<circle cx="${x}" cy="${y}" r="12"/><text x="${x}" y="${y}">${DEVA[i]}</text>`);
+});
 
 /* ---------- text splitting ---------- */
 $$('[data-split]').forEach(el => { el.innerHTML = [...el.textContent].map(c => `<span class="char">${c}</span>`).join(''); });
@@ -146,9 +148,8 @@ playBtn.addEventListener('click', () => {
 video.addEventListener('play', () => playBtn.classList.add('is-hidden'));
 
 /* ---------- WebGL ---------- */
-let bokeh = null, fire = null;
+let bokeh = null;
 try { bokeh = createBokeh($('#gl')); } catch (e) { console.warn('bokeh off', e); }
-try { fire = createFire($('#fire')); } catch (e) { console.warn('fire off', e); }
 
 /* ---------- smooth scroll ---------- */
 const lenis = new Lenis({ duration: 1.2, smoothWheel: true, syncTouch: false, easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
@@ -162,7 +163,7 @@ gsap.ticker.add(() => { if (bokeh) bokeh.velocity *= 0.9; });
 
 /* ---------- gate ---------- */
 const seal = $('#seal');
-const readyGate = () => { if (!seal.disabled) return; seal.disabled = false; $('#gateHint').textContent = 'Tap the seal to open'; };
+const readyGate = () => { if (!seal.disabled || !seal.isConnected || seal.dataset.opened) return; seal.disabled = false; $('#gateHint').textContent = 'Tap the seal to open'; };
 addEventListener('load', readyGate);
 setTimeout(readyGate, 5000);
 if (document.fonts) document.fonts.ready.then(() => setTimeout(readyGate, 300));
@@ -173,7 +174,7 @@ gsap.timeline({ delay: 0.25 })
   .to('.gate__inner > *', { opacity: 1, y: 0, stagger: 0.12, duration: 1, ease: 'power3.out' }, 0.3);
 
 function openGate() {
-  seal.disabled = true;
+  seal.disabled = true; seal.dataset.opened = '1';
   playHero();
   if (navigator.vibrate) navigator.vibrate(15);
   const tl = gsap.timeline({ defaults: { ease: 'power3.inOut' } });
@@ -184,7 +185,7 @@ function openGate() {
     .to('.gate__half--top', { yPercent: -101, duration: 1.5, ease: 'expo.inOut' }, '-=0.2')
     .to('.gate__half--bot', { yPercent: 101, duration: 1.5, ease: 'expo.inOut' }, '<')
     .add(() => { if (bokeh) { bokeh.active = true; gsap.to(bokeh, { alpha: 1, duration: 2.5 }); gsap.fromTo(bokeh, { burst: 1 }, { burst: 0, duration: 3, ease: 'power2.out' }); } }, '<0.3')
-    .add(() => { $('#gate').remove(); document.body.classList.remove('is-locked'); lenis.start(); ScrollTrigger.refresh(); })
+    .add(() => { $('#gate').remove(); document.body.classList.remove('is-locked'); window.scrollTo(0, 0); lenis.scrollTo(0, { immediate: true }); lenis.start(); ScrollTrigger.refresh(); })
     .add(heroIntro(), '-=1.1');
 }
 seal.addEventListener('click', openGate);
@@ -202,6 +203,18 @@ function heroIntro() {
 }
 
 /* ---------- scroll choreography ---------- */
+const road = { rot: 0 };
+function sizeRoad() {
+  const w = innerWidth, h = innerHeight, world = $('.road__world');
+  const land = w > h;
+  const k = land ? Math.max(w / 2576, h / 1447) : Math.max(w / 1447, h / 2576);
+  world.style.aspectRatio = 'auto';
+  world.style.width = `${1447 * k}px`; world.style.height = `${2576 * k}px`;
+  road.rot = land ? 90 : 0;
+}
+sizeRoad();
+ScrollTrigger.addEventListener('refreshInit', sizeRoad);
+
 function scenes() {
   gsap.set(['.road__world', '.hero__lines'], { xPercent: -50, yPercent: -50 });
   gsap.set('.road__car', { xPercent: -50 });
@@ -229,8 +242,8 @@ function scenes() {
   gsap.fromTo('.couple__photo img', { scale: 1.25 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: '.couple', start: 'top bottom', end: 'bottom top', scrub: true } });
 
   /* THE ROAD: the car drives in and comes to a stop */
-  const rt = gsap.timeline({ scrollTrigger: { trigger: '.road', start: 'top top', end: () => '+=' + innerHeight * 2.6, scrub: 1, pin: true, anticipatePin: 1 } });
-  rt.fromTo('.road__world', { scale: 1.28, xPercent: -50, yPercent: -46 }, { scale: 1, xPercent: -50, yPercent: -50, duration: 6.6, ease: 'power2.out' }, 0)
+  const rt = gsap.timeline({ scrollTrigger: { trigger: '.road', start: 'top top', end: () => '+=' + innerHeight * 2.6, scrub: 1, pin: true, anticipatePin: 1, invalidateOnRefresh: true } });
+  rt.fromTo('.road__world', { scale: 1.28, xPercent: -50, yPercent: -46, rotate: () => road.rot }, { scale: 1, xPercent: -50, yPercent: -50, rotate: () => road.rot, duration: 6.6, ease: 'power2.out' }, 0)
     .fromTo('.road__car', { yPercent: -175 }, { yPercent: 0, duration: 6.4, ease: 'power3.out' }, 0)
     .fromTo('.road__car', { xPercent: -12 }, { xPercent: -50, duration: 4.2, ease: 'sine.inOut' }, 1.0)
     .fromTo('.road__car', { rotate: 0 }, { rotate: 7, duration: 1.8, ease: 'sine.out' }, 1.0)
@@ -244,29 +257,38 @@ function scenes() {
     .fromTo('.road__text', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1.2, ease: 'power3.out' }, 7.3)
     .to({}, { duration: 1.4 });
 
-  /* SAPTAPADI */
-  const vcards = $$('.vcard'), lamps = $$('.lamp');
-  const layout = (a) => {
-    vcards.forEach((c, k) => {
-      const d = k - a;
-      if (d < 0) {
-        const f = Math.min(1, -d);
-        gsap.set(c, { rotateX: -f * 75, yPercent: -f * 22, z: -f * 140, opacity: Math.max(0, 1 - f * 2.2), scale: 1 - f * 0.05, transformOrigin: '50% 0%' });
-      } else {
-        gsap.set(c, { rotateX: 0, yPercent: Math.min(d, 3) * 5, z: -Math.min(d, 3) * 60, scale: 1 - Math.min(d, 3) * 0.04, opacity: d > 3.2 ? 0 : 1 - Math.max(0, d - 2.2) });
-      }
-    });
-    lamps.forEach((l, k) => l.classList.toggle('on', a >= k - 0.5));
-    $('#vowIdx').textContent = String(Math.min(7, Math.round(a) + 1)).padStart(2, '0');
+  /* SAPTAPADI: walk around the sacred fire */
+  const slides = $$('.vow'), nodes = $$('.agni__nodes circle'), couple = $$('.agni__couple circle');
+  let cur = -1;
+  const setVow = (i) => {
+    if (i === cur) return;
+    const prev = slides[cur];
+    if (prev) gsap.to(prev, { opacity: 0, y: -20, duration: 0.35, overwrite: true });
+    gsap.fromTo(slides[i], { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, delay: 0.1, overwrite: true });
+    gsap.fromTo('#vowNum', { rotateX: -90, opacity: 0 }, { rotateX: 0, opacity: 1, duration: 0.5, onStart: () => { $('#vowNum').textContent = DEVA[i]; } });
+    nodes.forEach((n, k) => n.classList.toggle('on', k <= i));
+    cur = i;
   };
-  layout(0);
+  setVow(0);
+  const placeCouple = (p) => {
+    const base = -90 + p * 360;
+    couple.forEach((c, k) => {
+      const a = (base - k * 9) * Math.PI / 180;
+      c.setAttribute('cx', 150 + Math.cos(a) * 130); c.setAttribute('cy', 150 + Math.sin(a) * 130);
+    });
+  };
+  placeCouple(0);
   ScrollTrigger.create({
-    trigger: '.vows', start: 'top top', end: () => '+=' + innerHeight * 4, pin: true, scrub: 1, anticipatePin: 1,
-    onUpdate: s => { const a = Math.min(6, s.progress * 6.6); layout(a); if (fire) fire.power = 0.55 + s.progress * 0.5; },
-    onToggle: s => { if (fire) fire.visible = s.isActive; }
+    trigger: '.vows', start: 'top top', end: () => '+=' + innerHeight * 3.5, pin: true, scrub: 1, anticipatePin: 1,
+    onUpdate: self => {
+      const p = self.progress;
+      gsap.set('.agni__trail', { strokeDashoffset: 817 * (1 - p) });
+      placeCouple(p);
+      setVow(Math.min(6, Math.floor(p * 7)));
+      gsap.set('.agni__fire', { scale: 1 + p * 0.25 });
+    }
   });
-  ScrollTrigger.create({ trigger: '.vows', start: 'top bottom', end: 'bottom top', onToggle: s => { if (fire) fire.visible = s.isActive; } });
-  gsap.from('.vows__head > *', { y: 30, opacity: 0, stagger: 0.12, scrollTrigger: { trigger: '.vows', start: 'top 80%', end: 'top 25%', scrub: 1 } });
+  gsap.from('.vows__head > *', { y: 40, opacity: 0, stagger: 0.12, scrollTrigger: { trigger: '.vows', start: 'top 80%', end: 'top 20%', scrub: 1 } });
 
   /* GALLERY cover-flow */
   const track = $('.gallery__track'), gcards = $$('.gcard');
@@ -313,8 +335,8 @@ function scenes() {
   });
 
   /* VENUE */
-  ScrollTrigger.create({ trigger: '.venue', start: 'top 160%', once: true, onEnter: () => { const f = $('.venue__map iframe'); f.src = f.dataset.src; } });
-  gsap.from('.venue__map', { clipPath: 'inset(100% 0 0 0)', duration: 1.4, ease: 'expo.inOut', scrollTrigger: { trigger: '.venue__map', start: 'top 85%' } });
+  gsap.from('.venue__photo', { clipPath: 'inset(100% 0 0 0)', duration: 1.5, ease: 'expo.inOut', scrollTrigger: { trigger: '.venue__photo', start: 'top 85%' } });
+  gsap.fromTo('.venue__photo img', { scale: 1.25 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: '.venue__photo', start: 'top bottom', end: 'bottom top', scrub: true } });
   gsap.from('.venue .display, .venue__addr, .venue .eyebrow', { y: 30, opacity: 0, stagger: 0.1, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: '.venue', start: 'top 78%' } });
 
   /* HASHTAG */
