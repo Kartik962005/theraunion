@@ -4,77 +4,97 @@ const isMobile = matchMedia('(max-width: 760px)').matches;
 const DPR = Math.min(window.devicePixelRatio || 1, 2);
 
 /* ================================================================
-   GOLD BOKEH — soft out-of-focus lights drifting over the site
+   SPARKLES — twinkling 4-point gold glints floating in 3D depth
    ================================================================ */
 export function createBokeh(canvas) {
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, premultipliedAlpha: true });
-  renderer.setPixelRatio(DPR);
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, premultipliedAlpha: true, powerPreference: 'high-performance' });
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  renderer.setPixelRatio(dpr);
   renderer.setClearColor(0x000000, 0);
   const scene = new THREE.Scene();
-  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 10);
+  const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 50);
+  camera.position.z = 6;
 
-  const COUNT = isMobile ? 70 : 120;
-  const pos = new Float32Array(COUNT * 3), size = new Float32Array(COUNT), seed = new Float32Array(COUNT), depth = new Float32Array(COUNT);
+  const COUNT = isMobile ? 90 : 160;
+  const pos = new Float32Array(COUNT * 3), size = new Float32Array(COUNT), seed = new Float32Array(COUNT);
   for (let i = 0; i < COUNT; i++) {
-    pos[i * 3] = Math.random() * 2 - 1; pos[i * 3 + 1] = Math.random() * 2 - 1; pos[i * 3 + 2] = 0;
-    const d = Math.random();
-    depth[i] = d;
-    size[i] = (isMobile ? 1 : 1.25) * (d < 0.08 ? 46 + Math.random() * 40 : d < 0.35 ? 10 + Math.random() * 14 : 3 + Math.random() * 7);
+    pos[i * 3] = (Math.random() - 0.5) * 12;
+    pos[i * 3 + 1] = (Math.random() - 0.5) * 16;
+    pos[i * 3 + 2] = -Math.random() * 12 + 2;
+    size[i] = Math.random() < 0.12 ? 1.8 + Math.random() * 1.4 : 0.5 + Math.random() * 0.9;
     seed[i] = Math.random() * 100;
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   geo.setAttribute('aSize', new THREE.BufferAttribute(size, 1));
   geo.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
-  geo.setAttribute('aDepth', new THREE.BufferAttribute(depth, 1));
 
   const mat = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.NormalBlending, premultipliedAlpha: true,
-    uniforms: { uTime: { value: 0 }, uScroll: { value: 0 }, uDPR: { value: DPR }, uAlpha: { value: 0 }, uBurst: { value: 0 } },
+    uniforms: { uTime: { value: 0 }, uScroll: { value: 0 }, uDPR: { value: dpr }, uAlpha: { value: 0 }, uBurst: { value: 0 }, uH: { value: innerHeight } },
     vertexShader: `
-      attribute float aSize; attribute float aSeed; attribute float aDepth;
-      uniform float uTime, uScroll, uDPR, uBurst;
-      varying float vDepth; varying float vTw;
+      attribute float aSize; attribute float aSeed;
+      uniform float uTime, uScroll, uDPR, uBurst, uH;
+      varying float vTw; varying float vRot; varying float vDepth;
       void main(){
         vec3 p = position;
-        float speed = mix(0.035, 0.012, aDepth);
-        p.y = mod(p.y + 1.0 + uTime*speed + uScroll*mix(1.6,0.35,aDepth), 2.0) - 1.0;
-        p.x += sin(uTime*0.25 + aSeed)*0.06*(1.0-aDepth*0.5) + cos(uTime*0.11 + aSeed*2.0)*0.03;
-        p.y += uBurst * (1.0 - aDepth) * 0.15;
-        vDepth = aDepth;
-        vTw = 0.65 + 0.35*sin(uTime*(0.8+fract(aSeed)*1.6) + aSeed);
-        gl_Position = vec4(p.xy, 0.0, 1.0);
-        gl_PointSize = aSize * uDPR * (1.0 + uBurst*0.4);
+        float depth = clamp((2.0 - p.z) / 12.0, 0.0, 1.0);        // 0 near … 1 far
+        p.y = mod(p.y + 8.0 + uTime*0.07 + uScroll*mix(2.2, 0.6, depth), 16.0) - 8.0;
+        p.x += sin(uTime*0.2 + aSeed)*0.25;
+        p.z += sin(uTime*0.15 + aSeed*1.7)*0.4 + uBurst*2.5*(1.0-depth);
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_Position = projectionMatrix * mv;
+        float tw = 0.5 + 0.5*sin(uTime*(1.2 + fract(aSeed*7.0)*2.2) + aSeed*3.0);
+        vTw = pow(tw, 3.0);
+        vRot = uTime*0.35*(fract(aSeed)-0.5) + aSeed;
+        vDepth = depth;
+        gl_PointSize = aSize * (uH * 0.045) * (6.0 / -mv.z) * uDPR * (0.6 + 0.6*vTw);
       }`,
     fragmentShader: `
-      uniform float uAlpha; varying float vDepth; varying float vTw;
+      uniform float uAlpha; varying float vTw; varying float vRot; varying float vDepth;
       void main(){
-        vec2 c = gl_PointCoord - 0.5; float r = length(c);
-        float edge = mix(0.18, 0.04, vDepth);
-        float disc = 1.0 - smoothstep(0.5 - edge, 0.5, r);
-        float rim = smoothstep(0.32, 0.47, r) * (1.0 - smoothstep(0.47, 0.5, r)) * (1.0 - vDepth) * 0.5;
-        float core = exp(-r*r*18.0) * vDepth;
-        vec3 gold = mix(vec3(1.0,0.78,0.42), vec3(1.0,0.92,0.72), vDepth);
-        float a = (disc*mix(0.07,0.55,vDepth) + rim*0.35 + core*0.6) * vTw * uAlpha;
-        gl_FragColor = vec4(gold * a, a);
+        vec2 c = gl_PointCoord - 0.5;
+        float cs = cos(vRot), sn = sin(vRot);
+        c = mat2(cs, -sn, sn, cs) * c;
+        float d = length(c);
+        float core = exp(-d*d*160.0);
+        float rx = exp(-abs(c.y)*55.0) * max(0.0, 1.0 - abs(c.x)*2.0);
+        float ry = exp(-abs(c.x)*55.0) * max(0.0, 1.0 - abs(c.y)*2.0);
+        vec2 c2 = mat2(0.7071,-0.7071,0.7071,0.7071) * c;
+        float rd = (exp(-abs(c2.y)*90.0)*max(0.0,1.0-abs(c2.x)*3.2) + exp(-abs(c2.x)*90.0)*max(0.0,1.0-abs(c2.y)*3.2)) * 0.45;
+        float halo = exp(-d*d*28.0) * 0.28;
+        float i = (core*1.3 + rx + ry + rd + halo) * (0.25 + 0.75*vTw);
+        vec3 col = mix(vec3(1.0, 0.97, 0.86), vec3(0.95, 0.74, 0.36), smoothstep(0.0, 0.4, d));
+        float a = clamp(i, 0.0, 1.0) * uAlpha * mix(1.0, 0.55, vDepth);
+        gl_FragColor = vec4(col * a, a);
       }`
   });
-  scene.add(new THREE.Points(geo, mat));
+  const points = new THREE.Points(geo, mat);
+  scene.add(points);
 
-  const resize = () => renderer.setSize(innerWidth, innerHeight, false);
+  const resize = () => {
+    renderer.setSize(innerWidth, innerHeight, false);
+    camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+    mat.uniforms.uH.value = innerHeight;
+  };
   resize(); addEventListener('resize', resize);
+
+  let tx = 0, ty = 0;
+  addEventListener('pointermove', (e) => { tx = (e.clientX / innerWidth - 0.5); ty = (e.clientY / innerHeight - 0.5); }, { passive: true });
 
   const state = { velocity: 0, active: false, alpha: 0, burst: 0 };
   const clock = new THREE.Clock();
   let scrollAcc = 0;
   function tick() {
     const dt = Math.min(clock.getDelta(), 0.05);
-    if (state.active) {
-      scrollAcc += THREE.MathUtils.clamp(state.velocity, -80, 80) * 0.00035;
+    if (state.active && !document.hidden) {
+      scrollAcc += THREE.MathUtils.clamp(state.velocity, -80, 80) * 0.0009;
       mat.uniforms.uTime.value += dt;
       mat.uniforms.uScroll.value = scrollAcc;
       mat.uniforms.uAlpha.value = state.alpha;
       mat.uniforms.uBurst.value = state.burst;
+      points.rotation.y += (tx * 0.25 - points.rotation.y) * 0.03;
+      points.rotation.x += (ty * 0.15 - points.rotation.x) * 0.03;
       renderer.render(scene, camera);
     }
     requestAnimationFrame(tick);

@@ -152,7 +152,7 @@ let bokeh = null;
 try { bokeh = createBokeh($('#gl')); } catch (e) { console.warn('bokeh off', e); }
 
 /* ---------- smooth scroll ---------- */
-const lenis = new Lenis({ duration: 1.2, smoothWheel: true, syncTouch: false, easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+const lenis = new Lenis({ lerp: 0.075, smoothWheel: true, wheelMultiplier: 0.7, touchMultiplier: 1, syncTouch: false });
 lenis.stop();
 lenis.on('scroll', (e) => { ScrollTrigger.update(); if (bokeh) bokeh.velocity = e.velocity; });
 gsap.ticker.add((t) => lenis.raf(t * 1000));
@@ -214,15 +214,15 @@ function sizeRoad() {
 }
 sizeRoad();
 ScrollTrigger.addEventListener('refreshInit', sizeRoad);
+gsap.set(['.road__world', '.hero__lines'], { x: 0, y: 0, xPercent: -50, yPercent: -50 });
+gsap.set('.road__car', { x: 0, y: 0, xPercent: -50 });
 
 function scenes() {
-  gsap.set(['.road__world', '.hero__lines'], { xPercent: -50, yPercent: -50 });
-  gsap.set('.road__car', { xPercent: -50 });
   gsap.to('.progress i', { scaleX: 1, ease: 'none', scrollTrigger: { start: 0, end: 'max', scrub: true } });
 
   /* HERO: film folds into an arch window */
   const archW = () => Math.min(innerWidth * 0.68, innerWidth > 900 ? 440 : 360);
-  const ht = gsap.timeline({ scrollTrigger: { trigger: '.hero', start: 'top top', end: () => '+=' + innerHeight * 2.2, scrub: 1, pin: true, anticipatePin: 1, invalidateOnRefresh: true,
+  const ht = gsap.timeline({ scrollTrigger: { trigger: '.hero', start: 'top top', end: () => '+=' + innerHeight * 3, scrub: 1.4, pin: true, anticipatePin: 1, invalidateOnRefresh: true,
     onLeave: () => heroVideo.pause(), onEnterBack: playHero } });
   ht.to('.hero__cue', { opacity: 0, duration: 0.2 }, 0)
     .to('.hx--a', { yPercent: -18, opacity: 0, duration: 0.45, ease: 'power2.in' }, 0)
@@ -242,15 +242,13 @@ function scenes() {
   gsap.fromTo('.couple__photo img', { scale: 1.25 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: '.couple', start: 'top bottom', end: 'bottom top', scrub: true } });
 
   /* THE ROAD: the car drives in and comes to a stop */
-  const rt = gsap.timeline({ scrollTrigger: { trigger: '.road', start: 'top top', end: () => '+=' + innerHeight * 2.6, scrub: 1, pin: true, anticipatePin: 1, invalidateOnRefresh: true } });
-  rt.fromTo('.road__world', { scale: 1.28, xPercent: -50, yPercent: -46, rotate: () => road.rot }, { scale: 1, xPercent: -50, yPercent: -50, rotate: () => road.rot, duration: 6.6, ease: 'power2.out' }, 0)
+  const rt = gsap.timeline({ scrollTrigger: { trigger: '.road', start: 'top top', end: () => '+=' + innerHeight * 3.6, scrub: 1.4, pin: true, anticipatePin: 1, invalidateOnRefresh: true } });
+  rt.fromTo('.road__world', { scale: 1.22, x: 0, y: 0, xPercent: -50, yPercent: -47, rotate: () => road.rot }, { scale: 1, x: 0, y: 0, xPercent: -50, yPercent: -50, rotate: () => road.rot, duration: 6.6, ease: 'power2.out' }, 0)
     .fromTo('.road__car', { yPercent: -175 }, { yPercent: 0, duration: 6.4, ease: 'power3.out' }, 0)
     .fromTo('.road__car', { xPercent: -12 }, { xPercent: -50, duration: 4.2, ease: 'sine.inOut' }, 1.0)
     .fromTo('.road__car', { rotate: 0 }, { rotate: 7, duration: 1.8, ease: 'sine.out' }, 1.0)
     .to('.road__car', { rotate: -2.5, duration: 1.8, ease: 'sine.inOut' }, 2.8)
     .to('.road__car', { rotate: 0, duration: 1.6, ease: 'sine.out' }, 4.6)
-    .fromTo('.road__ghost.g1', { opacity: 0.42, yPercent: -7 }, { opacity: 0, yPercent: -1, duration: 5, ease: 'power2.out' }, 0)
-    .fromTo('.road__ghost.g2', { opacity: 0.24, yPercent: -14 }, { opacity: 0, yPercent: -2, duration: 4.4, ease: 'power2.out' }, 0)
     .to('.road__carimg', { scaleY: 0.985, transformOrigin: '50% 100%', duration: 0.35, ease: 'power1.out' }, 6.3)
     .to('.road__carimg', { scaleY: 1, duration: 0.7, ease: 'elastic.out(1,0.4)' }, 6.65)
     .to('.road__veil', { opacity: 1, duration: 1.2 }, 7.0)
@@ -279,7 +277,7 @@ function scenes() {
   };
   placeCouple(0);
   ScrollTrigger.create({
-    trigger: '.vows', start: 'top top', end: () => '+=' + innerHeight * 3.5, pin: true, scrub: 1, anticipatePin: 1,
+    trigger: '.vows', start: 'top top', end: () => '+=' + innerHeight * 4.5, pin: true, scrub: 1.4, anticipatePin: 1,
     onUpdate: self => {
       const p = self.progress;
       gsap.set('.agni__trail', { strokeDashoffset: 817 * (1 - p) });
@@ -296,7 +294,7 @@ function scenes() {
   let galleryOn = false;
   gsap.to(track, {
     x: () => -dist(), ease: 'none',
-    scrollTrigger: { trigger: '.gallery', start: 'top top', end: () => '+=' + dist() * 1.25, scrub: 1, pin: true, anticipatePin: 1, invalidateOnRefresh: true,
+    scrollTrigger: { trigger: '.gallery', start: 'top top', end: () => '+=' + dist() * 1.6, scrub: 1.4, pin: true, anticipatePin: 1, invalidateOnRefresh: true,
       onToggle: s => { galleryOn = s.isActive; }, onUpdate: s => gsap.set('.gallery__progress span', { scaleX: s.progress }) }
   });
   const coverflow = () => {
@@ -304,7 +302,7 @@ function scenes() {
     gcards.forEach(c => {
       const r = c.getBoundingClientRect();
       const d = gsap.utils.clamp(-1.5, 1.5, (r.left + r.width / 2 - cx) / (innerWidth * 0.7));
-      gsap.set(c, { rotateY: d * -34, z: -Math.abs(d) * 150, scale: 1 - Math.abs(d) * 0.06, filter: `brightness(${1 - Math.abs(d) * 0.35})`, transformPerspective: 1100 });
+      gsap.set(c, { rotateY: d * -34, z: -Math.abs(d) * 150, scale: 1 - Math.abs(d) * 0.06, opacity: 1 - Math.abs(d) * 0.3, transformPerspective: 1100, force3D: true });
       gsap.set(c.querySelector('img'), { xPercent: d * -8, scale: 1.12 });
     });
   };
