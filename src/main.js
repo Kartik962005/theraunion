@@ -131,9 +131,9 @@ const copy = async (text) => {
 };
 $('#copyTag').addEventListener('click', async () => { await copy('#theRAunion'); toast('Hashtag copied'); });
 $('#shareBtn').addEventListener('click', async () => {
-  const data = { title: 'Apeksha & Raghav · #theRAunion', text: 'You’re invited to the wedding of Apeksha & Raghav · 24–26 Nov 2026 · Taj Cidade de Goa Horizon', url: location.origin + location.pathname };
+  const data = { title: 'Apeksha & Raghav · #theRAunion', text: 'You’re invited to the wedding of Apeksha & Raghav · 24–26 Nov 2026 · Taj Cidade de Goa Horizon', url: 'https://theraunion.online' };
   if (navigator.share) { try { await navigator.share(data); } catch {} }
-  else { await copy(data.url); toast('Invitation link copied'); }
+  else { await copy(data.url); toast('Link copied · theraunion.online'); }
 });
 
 /* ---------- film ---------- */
