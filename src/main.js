@@ -1,10 +1,9 @@
+import '@fontsource/cormorant-garamond/300.css';
 import '@fontsource/cormorant-garamond/400.css';
 import '@fontsource/cormorant-garamond/400-italic.css';
 import '@fontsource/cormorant-garamond/500.css';
-import '@fontsource/cormorant-garamond/600.css';
-import '@fontsource/cormorant-garamond/600-italic.css';
+import '@fontsource/cormorant-garamond/500-italic.css';
 import '@fontsource/cinzel/400.css';
-import '@fontsource/cinzel/500.css';
 import '@fontsource/pinyon-script/400.css';
 import '@fontsource/tiro-devanagari-hindi/400.css';
 import './style.css';
@@ -12,10 +11,9 @@ import './style.css';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
-import { createPetals } from './gl.js';
-import { createPalace } from './palace.js';
-import { DAYS, ICONS, VOWS, WEDDING_MOMENT } from './data.js';
-import { rangoli, lineMandala, toran, paisley, diya } from './ornaments.js';
+import { createBokeh, createFire } from './gl.js';
+import { DAYS, VOWS, WEDDING_MOMENT } from './data.js';
+import { lineMandala } from './ornaments.js';
 
 gsap.registerPlugin(ScrollTrigger);
 ScrollTrigger.config({ ignoreMobileResize: true });
@@ -24,7 +22,7 @@ const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const isMobile = matchMedia('(max-width: 760px)').matches;
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-const DEVA = ['१', '२', '३', '४', '५', '६', '७'];
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 
 /* ---------- stable viewport height ---------- */
 const setVH = () => document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
@@ -33,42 +31,40 @@ let lastW = innerWidth;
 addEventListener('resize', () => { if (innerWidth !== lastW) { lastW = innerWidth; setVH(); ScrollTrigger.refresh(); } });
 addEventListener('orientationchange', () => setTimeout(() => { setVH(); ScrollTrigger.refresh(); }, 300));
 
-/* ---------- ornaments ---------- */
-const PAL = {
-  door: ['#8c1a2b', '#5a0f1f', '#d8b56a', '#a8792f', '#f6e4b0'],
-  invite: ['#f29a1f', '#c2185b', '#d8b56a', '#2e8b57', '#ffd34d'],
-  tag: ['#f29a1f', '#d63aa0', '#d8b56a', '#3fb27f', '#ffd34d']
-};
-$$('[data-rangoli]').forEach(el => { el.innerHTML = rangoli({ palette: PAL[el.dataset.rangoli], stroke: '#e9c87d' }); });
+/* ---------- fine-line mandalas ---------- */
 $$('[data-linemandala]').forEach(el => { el.innerHTML = lineMandala(); });
-$$('[data-toran]').forEach(el => { el.innerHTML = toran({ width: isMobile ? 420 : 900, drops: isMobile ? 7 : 13 }); });
-$$('[data-paisley]').forEach(el => { el.innerHTML = paisley(); });
-$$('[data-diya]').forEach(el => { el.outerHTML = diya(); });
-$$('.draw').forEach(p => { try { const l = Math.ceil(p.getTotalLength()); p.style.setProperty('--len', l); } catch {} });
+$$('.draw').forEach(p => { try { p.style.setProperty('--len', Math.ceil(p.getTotalLength())); } catch {} });
 
-/* ---------- schedule ---------- */
-const DAY_PAL = [
-  ['#f29a1f', '#c2185b', '#d8b56a', '#ff8a1f', '#ffd34d'],
-  ['#ffc61a', '#d63aa0', '#d8b56a', '#3fb27f', '#ff5fa2'],
-  ['#ff5a2c', '#8c1a2b', '#d8b56a', '#3fb27f', '#ffd34d']
-];
-$('#days').innerHTML = DAYS.map((d, di) => `
+/* ---------- hero video (portrait for phones, landscape for wide screens) ---------- */
+const heroVideo = $('#heroVideo');
+const portrait = innerWidth / innerHeight < 1;
+heroVideo.poster = portrait ? 'media/hero-portrait.jpg' : 'media/hero-landscape.jpg';
+heroVideo.src = portrait ? 'media/hero-portrait.mp4' : 'media/hero-landscape.mp4';
+heroVideo.muted = true;
+const playHero = () => { const p = heroVideo.play(); if (p) p.catch(() => {}); };
+playHero();
+
+/* ---------- schedule (editorial) ---------- */
+$('#days').innerHTML = DAYS.map(d => `
   <div class="day">
-    <div class="day__rangoli">${rangoli({ palette: DAY_PAL[di], stroke: '#e9c87d' })}</div>
     <div class="day__head">
-      <div class="day__num">${d.date}</div>
-      <div class="day__meta"><b>${d.weekday} · Nov</b><span>${d.title}</span></div>
+      <div class="day__num"><span>${d.date}</span></div>
+      <div class="day__meta"><b>${d.weekday} · November</b><span>${d.title}</span></div>
     </div>
-    <div class="day__list">
-      <div class="day__line"><i></i></div>
-      ${d.events.map(e => `
-        <article class="ev${e.grand ? ' ev--grand' : ''}" style="--c:${e.accent}">
-          <div class="ev__icon">${ICONS[e.icon]}</div>
-          <h3 class="ev__name">${e.name}</h3>
-          <p class="ev__desc">${e.desc}</p>
-          <div class="ev__row"><span>${ICONS.clock}${e.time}</span><span>${ICONS.pin}${e.venue}</span></div>
-        </article>`).join('')}
-    </div>
+    <div class="day__rule"></div>
+    ${d.events.map(e => {
+      const [t] = e.time.split(' onwards');
+      const name = e.name.replace(/ & /g, ' <em>&amp;</em> ').replace(/ \/ /g, ' <em>/</em> ');
+      return `
+      <article class="ev${e.grand ? ' ev--grand' : ''}">
+        <div class="ev__time"><span class="mask"><span>${t}</span></span><small>onwards</small></div>
+        <div class="ev__body">
+          <h3 class="ev__name mask"><span>${name}</span></h3>
+          <p class="ev__desc mask"><span>${e.desc}</span></p>
+          <p class="ev__venue">${e.venue}</p>
+        </div>
+      </article>`;
+    }).join('')}
   </div>`).join('');
 
 /* ---------- calendar file ---------- */
@@ -109,15 +105,17 @@ $('#days').innerHTML = DAYS.map((d, di) => `
   tick();
 })();
 
-/* ---------- vows DOM ---------- */
-const vowSlides = $('#vowSlides');
-vowSlides.innerHTML = VOWS.map(v => `<div class="vow"><b>${v.hi}</b><p>${v.en}</p></div>`).join('');
-const nodesG = $('.agni__nodes');
-VOWS.forEach((_, i) => {
-  const a = (-90 + (i / 7) * 360) * Math.PI / 180;
-  const x = 150 + Math.cos(a) * 130, y = 150 + Math.sin(a) * 130;
-  nodesG.insertAdjacentHTML('beforeend', `<circle cx="${x}" cy="${y}" r="12"/><text x="${x}" y="${y}">${DEVA[i]}</text>`);
-});
+/* ---------- vows: cards + lamps ---------- */
+$('#vcards').innerHTML = VOWS.map((v, i) => `
+  <div class="vcard" style="z-index:${20 - i}">
+    <div class="vcard__face">
+      <div class="vcard__num foil">${ROMAN[i]}</div>
+      <div class="vcard__hi">${v.hi}</div>
+      <div class="vcard__rule"></div>
+      <p class="vcard__en">${v.en}</p>
+    </div>
+  </div>`).join('');
+$('#vowLamps').innerHTML = VOWS.map(() => '<span class="lamp"></span>').join('');
 
 /* ---------- text splitting ---------- */
 $$('[data-split]').forEach(el => { el.innerHTML = [...el.textContent].map(c => `<span class="char">${c}</span>`).join(''); });
@@ -129,14 +127,14 @@ const copy = async (text) => {
   try { await navigator.clipboard.writeText(text); return true; }
   catch { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); return ok; }
 };
-$('#copyTag').addEventListener('click', async () => { await copy('#theRAunion'); toast('Hashtag copied ✨'); });
+$('#copyTag').addEventListener('click', async () => { await copy('#theRAunion'); toast('Hashtag copied'); });
 $('#shareBtn').addEventListener('click', async () => {
   const data = { title: 'Apeksha & Raghav · #theRAunion', text: 'You’re invited to the wedding of Apeksha & Raghav · 24–26 Nov 2026 · Taj Cidade de Goa Horizon', url: location.origin + location.pathname };
   if (navigator.share) { try { await navigator.share(data); } catch {} }
   else { await copy(data.url); toast('Invitation link copied'); }
 });
 
-/* ---------- film (picks quality for the device) ---------- */
+/* ---------- film ---------- */
 const video = $('#filmVideo'), playBtn = $('#filmPlay');
 playBtn.addEventListener('click', () => {
   if (!video.src) {
@@ -148,194 +146,187 @@ playBtn.addEventListener('click', () => {
 video.addEventListener('play', () => playBtn.classList.add('is-hidden'));
 
 /* ---------- WebGL ---------- */
-let palace = null, petals = null;
-try { palace = createPalace($('#palace')); } catch (e) { console.warn('palace off', e); }
-try { petals = createPetals($('#gl')); } catch (e) { console.warn('petals off', e); }
+let bokeh = null, fire = null;
+try { bokeh = createBokeh($('#gl')); } catch (e) { console.warn('bokeh off', e); }
+try { fire = createFire($('#fire')); } catch (e) { console.warn('fire off', e); }
 
 /* ---------- smooth scroll ---------- */
 const lenis = new Lenis({ duration: 1.2, smoothWheel: true, syncTouch: false, easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
 lenis.stop();
-lenis.on('scroll', (e) => { ScrollTrigger.update(); if (petals) petals.velocity = e.velocity; });
+lenis.on('scroll', (e) => { ScrollTrigger.update(); if (bokeh) bokeh.velocity = e.velocity; });
 gsap.ticker.add((t) => lenis.raf(t * 1000));
 gsap.ticker.lagSmoothing(0);
 let lastY = scrollY;
-addEventListener('scroll', () => { if (petals) { petals.velocity = (scrollY - lastY) * 0.8; lastY = scrollY; } }, { passive: true });
-gsap.ticker.add(() => { if (petals) petals.velocity *= 0.9; });
+addEventListener('scroll', () => { if (bokeh) { bokeh.velocity = (scrollY - lastY) * 0.8; lastY = scrollY; } }, { passive: true });
+gsap.ticker.add(() => { if (bokeh) bokeh.velocity *= 0.9; });
 
 /* ---------- gate ---------- */
 const seal = $('#seal');
-const readyGate = () => {
-  if (!seal.disabled) return;
-  seal.disabled = false;
-  $('#gateHint').textContent = 'Tap the seal to open your invitation';
-};
+const readyGate = () => { if (!seal.disabled) return; seal.disabled = false; $('#gateHint').textContent = 'Tap the seal to open'; };
 addEventListener('load', readyGate);
-setTimeout(readyGate, 6000);
-if (document.fonts) document.fonts.ready.then(() => setTimeout(readyGate, 400));
+setTimeout(readyGate, 5000);
+if (document.fonts) document.fonts.ready.then(() => setTimeout(readyGate, 300));
 
-gsap.from('.gate__toran', { yPercent: -100, duration: 1.4, ease: 'bounce.out', delay: 0.2 });
-gsap.from('.gate__center > *', { y: 20, opacity: 0, stagger: 0.12, duration: 1, delay: 0.5, ease: 'power3.out' });
+gsap.set('.gate__inner > *', { opacity: 0, y: 18 });
+gsap.timeline({ delay: 0.25 })
+  .from('.gate__frame', { opacity: 0, scale: 1.04, duration: 1.4, ease: 'power2.out' })
+  .to('.gate__inner > *', { opacity: 1, y: 0, stagger: 0.12, duration: 1, ease: 'power3.out' }, 0.3);
 
 function openGate() {
   seal.disabled = true;
-  if (navigator.vibrate) navigator.vibrate(18);
+  playHero();
+  if (navigator.vibrate) navigator.vibrate(15);
   const tl = gsap.timeline({ defaults: { ease: 'power3.inOut' } });
-  tl.to(seal, { scale: 1.25, duration: 0.25, ease: 'power2.out' })
-    .to(seal, { scale: 0, rotate: 140, opacity: 0, duration: 0.45, ease: 'back.in(2)' })
-    .to('.gate__center > :not(.gate__seal-row)', { opacity: 0, y: -20, duration: 0.4, stagger: 0.05 }, '<')
-    .to('.gate__seal-row .diya', { opacity: 0, scale: 0.5, duration: 0.4 }, '<')
-    .to('.gate__toran', { yPercent: -120, duration: 0.9, ease: 'power2.in' }, '<0.1')
-    .add(() => { if (petals) { petals.active = true; petals.shower(); } }, '-=0.3')
-    .to('.gate__door--l', { rotateY: -110, duration: 2, ease: 'power2.inOut' }, '-=0.4')
-    .to('.gate__door--r', { rotateY: 110, duration: 2, ease: 'power2.inOut' }, '<')
-    .to('#gate', { opacity: 0, duration: 0.7, ease: 'none' }, '-=0.7')
+  tl.to(seal, { scale: 0.86, duration: 0.18, ease: 'power2.out' })
+    .to(seal, { scale: 1.6, opacity: 0, duration: 0.5, ease: 'power2.in' })
+    .to('.gate__inner > :not(.seal)', { opacity: 0, y: -14, duration: 0.5, stagger: 0.04 }, '<')
+    .to('.gate__frame', { opacity: 0, scale: 1.06, duration: 0.6 }, '<')
+    .to('.gate__half--top', { yPercent: -101, duration: 1.5, ease: 'expo.inOut' }, '-=0.2')
+    .to('.gate__half--bot', { yPercent: 101, duration: 1.5, ease: 'expo.inOut' }, '<')
+    .add(() => { if (bokeh) { bokeh.active = true; gsap.to(bokeh, { alpha: 1, duration: 2.5 }); gsap.fromTo(bokeh, { burst: 1 }, { burst: 0, duration: 3, ease: 'power2.out' }); } }, '<0.3')
     .add(() => { $('#gate').remove(); document.body.classList.remove('is-locked'); lenis.start(); ScrollTrigger.refresh(); })
-    .add(journeyIntro(), '-=2.2');
+    .add(heroIntro(), '-=1.1');
 }
 seal.addEventListener('click', openGate);
 
-function journeyIntro() {
+function heroIntro() {
   const tl = gsap.timeline();
-  if (palace) tl.to(palace, { intro: 1, duration: 3.2, ease: 'power3.out' }, 0);
-  tl.fromTo('.jx__mandala .draw', { strokeDashoffset: (i, el) => el.style.getPropertyValue('--len') || 600 }, { strokeDashoffset: 0, duration: 2.6, stagger: 0.01, ease: 'power2.inOut' }, 0.2)
-    .from('.jx__om', { y: 30, opacity: 0, duration: 1, ease: 'power3.out' }, 0.6)
-    .from('.jx__shloka', { y: 30, opacity: 0, duration: 1.2, ease: 'power3.out' }, 0.9)
-    .from('.jx__hint, .journey__cue', { opacity: 0, duration: 1 }, 1.6);
+  tl.fromTo('.hero__video', { scale: 1.18 }, { scale: 1, duration: 3.2, ease: 'power2.out' }, 0)
+    .from('.hx__mantra', { opacity: 0, y: -12, duration: 1 }, 0.3)
+    .from('.hx__eyebrow', { opacity: 0, letterSpacing: '1em', duration: 1.4, ease: 'power3.out' }, 0.4)
+    .from('.hx__names .char', { yPercent: 110, opacity: 0, duration: 1.2, stagger: 0.05, ease: 'expo.out' }, 0.6)
+    .from('.hx__amp', { opacity: 0, scale: 0.6, duration: 1 }, 1.0)
+    .from('.hx__date > *', { opacity: 0, y: 16, stagger: 0.08, duration: 0.8 }, 1.2)
+    .from('.hx__month, .hero__cue', { opacity: 0, duration: 1 }, 1.5);
   return tl;
 }
 
 /* ---------- scroll choreography ---------- */
 function scenes() {
+  gsap.set(['.road__world', '.hero__lines'], { xPercent: -50, yPercent: -50 });
+  gsap.set('.road__car', { xPercent: -50 });
   gsap.to('.progress i', { scaleX: 1, ease: 'none', scrollTrigger: { start: 0, end: 'max', scrub: true } });
 
-  /* JOURNEY through the palace */
-  const jt = gsap.timeline({
-    scrollTrigger: {
-      trigger: '.journey', start: 'top top', end: () => '+=' + innerHeight * 5.5, scrub: 1, pin: true, anticipatePin: 1,
-      onUpdate: self => { if (palace) palace.progress = self.progress; },
-      onLeave: () => { if (palace) palace.visible = false; },
-      onEnterBack: () => { if (palace) palace.visible = true; }
-    }
-  });
-  jt.to('.journey__cue', { opacity: 0, duration: 0.4 }, 0)
-    .to('.jx--1', { opacity: 0, scale: 1.25, filter: 'blur(6px)', duration: 0.8 }, 0.6)
-    .fromTo('.jx--2', { opacity: 0 }, { opacity: 1, duration: 0.3 }, 1.6)
-    .fromTo('.jx--2 .char', { yPercent: 120, rotateX: -90, opacity: 0 }, { yPercent: 0, rotateX: 0, opacity: 1, stagger: 0.05, duration: 0.8, ease: 'back.out(1.6)' }, 1.6)
-    .fromTo('.jx--2 .jx__amp, .jx--2 .jx__deva, .jx--2 .eyebrow', { opacity: 0, y: 20 }, { opacity: 1, y: 0, stagger: 0.1, duration: 0.6 }, 2.0)
-    .to('.jx--2', { opacity: 0, scale: 1.2, filter: 'blur(6px)', duration: 0.7 }, 3.6)
-    .fromTo('.jx--3', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.7 }, 4.4)
-    .fromTo('.jx__dates span', { opacity: 0, rotateY: -90 }, { opacity: 1, rotateY: 0, stagger: 0.15, duration: 0.6, ease: 'back.out(2)' }, 4.6)
-    .to('.jx--3', { opacity: 0, scale: 1.2, filter: 'blur(6px)', duration: 0.7 }, 6.2)
-    .fromTo('.jx--4', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.8 }, 7.6)
-    .to({}, { duration: 1.6 });
+  /* HERO: film folds into an arch window */
+  const archW = () => Math.min(innerWidth * 0.68, innerWidth > 900 ? 440 : 360);
+  const ht = gsap.timeline({ scrollTrigger: { trigger: '.hero', start: 'top top', end: () => '+=' + innerHeight * 2.2, scrub: 1, pin: true, anticipatePin: 1, invalidateOnRefresh: true,
+    onLeave: () => heroVideo.pause(), onEnterBack: playHero } });
+  ht.to('.hero__cue', { opacity: 0, duration: 0.2 }, 0)
+    .to('.hx--a', { yPercent: -18, opacity: 0, duration: 0.45, ease: 'power2.in' }, 0)
+    .to('.hero__frame', { top: '44%', width: archW, height: () => innerHeight * 0.5, borderRadius: () => `${archW() / 2}px ${archW() / 2}px 0px 0px`, duration: 0.65, ease: 'power3.inOut' }, 0.2)
+    .to('.hero__shade', { opacity: 0.25, duration: 0.5 }, 0.3)
+    .fromTo('.hero__lines', { opacity: 0, scale: 1.08 }, { opacity: 1, scale: 1, duration: 0.4 }, 0.7)
+    .fromTo('.hx--b > *', { opacity: 0, y: 18 }, { opacity: 1, y: 0, stagger: 0.07, duration: 0.35 }, 0.75)
+    .to({}, { duration: 0.3 });
 
   /* invitation */
   $$('.fade-words').forEach(el => gsap.to(el.querySelectorAll('.w'), { opacity: 1, stagger: 0.1, ease: 'none', scrollTrigger: { trigger: el, start: 'top 85%', end: 'bottom 55%', scrub: true } }));
-  $$('.corner').forEach(c => gsap.to(c.querySelectorAll('.draw'), { strokeDashoffset: 0, stagger: 0.05, ease: 'none', scrollTrigger: { trigger: c, start: 'top 95%', end: 'top 45%', scrub: 1 } }));
-  gsap.to('.invite__rangoli svg', { rotate: 120, scale: 1.2, ease: 'none', scrollTrigger: { trigger: '.invite', start: 'top bottom', end: 'bottom top', scrub: true } });
+  gsap.fromTo('.invite__mandala .draw', { strokeDashoffset: (i, el) => el.style.getPropertyValue('--len') || 600 }, { strokeDashoffset: 0, stagger: 0.004, ease: 'none', scrollTrigger: { trigger: '.invite', start: 'top 80%', end: 'bottom 70%', scrub: 1 } });
   const cards = $$('.couple__card');
-  gsap.from(cards[0], { rotateY: -85, x: -50, opacity: 0, transformOrigin: '0% 50%', ease: 'power2.out', scrollTrigger: { trigger: '.couple', start: 'top 92%', end: 'top 50%', scrub: 1 } });
-  gsap.from(cards[1], { rotateY: 85, x: 50, opacity: 0, transformOrigin: '100% 50%', ease: 'power2.out', scrollTrigger: { trigger: '.couple', start: 'top 92%', end: 'top 50%', scrub: 1 } });
-  gsap.from('.couple__knot', { scale: 0, rotate: -270, ease: 'back.out(2)', scrollTrigger: { trigger: '.couple', start: 'top 70%', end: 'top 45%', scrub: 1 } });
+  gsap.from(cards[0], { rotateY: 70, x: -40, opacity: 0, transformOrigin: '0% 50%', ease: 'power2.out', scrollTrigger: { trigger: '.couple', start: 'top 92%', end: 'top 45%', scrub: 1 } });
+  gsap.from(cards[1], { rotateY: -70, x: 40, opacity: 0, transformOrigin: '100% 50%', ease: 'power2.out', scrollTrigger: { trigger: '.couple', start: 'top 92%', end: 'top 45%', scrub: 1 } });
+  gsap.from('.couple__amp', { scale: 0.3, opacity: 0, ease: 'back.out(2)', scrollTrigger: { trigger: '.couple', start: 'top 70%', end: 'top 45%', scrub: 1 } });
+  gsap.fromTo('.couple__photo img', { scale: 1.25 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: '.couple', start: 'top bottom', end: 'bottom top', scrub: true } });
 
-  /* arch reveal */
-  const at = gsap.timeline({ scrollTrigger: { trigger: '.arch', start: 'top top', end: '+=160%', scrub: 1, pin: true, anticipatePin: 1, invalidateOnRefresh: true } });
-  at.to('.arch__frame', { width: () => innerWidth, height: () => innerHeight, maxWidth: () => innerWidth, borderRadius: 0, boxShadow: '0 0 0 0px #f7f0e3, 0 0 0 0px #b98e3e, 0 0 0 0 rgba(0,0,0,0)', ease: 'power2.inOut', duration: 1 })
-    .to('.arch__frame img', { scale: 1, ease: 'power2.inOut', duration: 1 }, 0)
-    .fromTo('.arch__text', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.4 }, 0.75)
-    .to({}, { duration: 0.35 });
+  /* THE ROAD: the car drives in and comes to a stop */
+  const rt = gsap.timeline({ scrollTrigger: { trigger: '.road', start: 'top top', end: () => '+=' + innerHeight * 2.6, scrub: 1, pin: true, anticipatePin: 1 } });
+  rt.fromTo('.road__world', { scale: 1.28, xPercent: -50, yPercent: -46 }, { scale: 1, xPercent: -50, yPercent: -50, duration: 6.6, ease: 'power2.out' }, 0)
+    .fromTo('.road__car', { yPercent: -175 }, { yPercent: 0, duration: 6.4, ease: 'power3.out' }, 0)
+    .fromTo('.road__car', { xPercent: -12 }, { xPercent: -50, duration: 4.2, ease: 'sine.inOut' }, 1.0)
+    .fromTo('.road__car', { rotate: 0 }, { rotate: 7, duration: 1.8, ease: 'sine.out' }, 1.0)
+    .to('.road__car', { rotate: -2.5, duration: 1.8, ease: 'sine.inOut' }, 2.8)
+    .to('.road__car', { rotate: 0, duration: 1.6, ease: 'sine.out' }, 4.6)
+    .fromTo('.road__ghost.g1', { opacity: 0.42, yPercent: -7 }, { opacity: 0, yPercent: -1, duration: 5, ease: 'power2.out' }, 0)
+    .fromTo('.road__ghost.g2', { opacity: 0.24, yPercent: -14 }, { opacity: 0, yPercent: -2, duration: 4.4, ease: 'power2.out' }, 0)
+    .to('.road__carimg', { scaleY: 0.985, transformOrigin: '50% 100%', duration: 0.35, ease: 'power1.out' }, 6.3)
+    .to('.road__carimg', { scaleY: 1, duration: 0.7, ease: 'elastic.out(1,0.4)' }, 6.65)
+    .to('.road__veil', { opacity: 1, duration: 1.2 }, 7.0)
+    .fromTo('.road__text', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1.2, ease: 'power3.out' }, 7.3)
+    .to({}, { duration: 1.4 });
 
-  /* saptapadi: walk around the sacred fire */
-  const slides = $$('.vow'), nodes = $$('.agni__nodes circle'), couple = $$('.agni__couple circle');
-  let cur = -1;
-  const setVow = (i) => {
-    if (i === cur) return;
-    const prev = slides[cur];
-    if (prev) gsap.to(prev, { opacity: 0, y: -20, duration: 0.35, overwrite: true });
-    gsap.fromTo(slides[i], { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, delay: 0.1, overwrite: true });
-    gsap.fromTo('#vowNum', { rotateX: -90, opacity: 0 }, { rotateX: 0, opacity: 1, duration: 0.5, onStart: () => { $('#vowNum').textContent = DEVA[i]; } });
-    nodes.forEach((n, k) => n.classList.toggle('on', k <= i));
-    cur = i;
-  };
-  setVow(0);
-  const placeCouple = (p) => {
-    const base = -90 + p * 360;
-    couple.forEach((c, k) => {
-      const a = (base - k * 9) * Math.PI / 180;
-      c.setAttribute('cx', 150 + Math.cos(a) * 130); c.setAttribute('cy', 150 + Math.sin(a) * 130);
+  /* SAPTAPADI */
+  const vcards = $$('.vcard'), lamps = $$('.lamp');
+  const layout = (a) => {
+    vcards.forEach((c, k) => {
+      const d = k - a;
+      if (d < 0) {
+        const f = Math.min(1, -d);
+        gsap.set(c, { rotateX: -f * 75, yPercent: -f * 22, z: -f * 140, opacity: Math.max(0, 1 - f * 2.2), scale: 1 - f * 0.05, transformOrigin: '50% 0%' });
+      } else {
+        gsap.set(c, { rotateX: 0, yPercent: Math.min(d, 3) * 5, z: -Math.min(d, 3) * 60, scale: 1 - Math.min(d, 3) * 0.04, opacity: d > 3.2 ? 0 : 1 - Math.max(0, d - 2.2) });
+      }
     });
+    lamps.forEach((l, k) => l.classList.toggle('on', a >= k - 0.5));
+    $('#vowIdx').textContent = String(Math.min(7, Math.round(a) + 1)).padStart(2, '0');
   };
-  placeCouple(0);
+  layout(0);
   ScrollTrigger.create({
-    trigger: '.vows', start: 'top top', end: () => '+=' + innerHeight * 3.5, pin: true, scrub: 1, anticipatePin: 1,
-    onUpdate: self => {
-      const p = self.progress;
-      gsap.set('.agni__trail', { strokeDashoffset: 817 * (1 - p) });
-      placeCouple(p);
-      setVow(Math.min(6, Math.floor(p * 7)));
-      gsap.set('.agni__fire', { scale: 1 + p * 0.25 });
-    }
+    trigger: '.vows', start: 'top top', end: () => '+=' + innerHeight * 4, pin: true, scrub: 1, anticipatePin: 1,
+    onUpdate: s => { const a = Math.min(6, s.progress * 6.6); layout(a); if (fire) fire.power = 0.55 + s.progress * 0.5; },
+    onToggle: s => { if (fire) fire.visible = s.isActive; }
   });
-  gsap.from('.vows__head > *', { y: 40, opacity: 0, stagger: 0.12, scrollTrigger: { trigger: '.vows', start: 'top 80%', end: 'top 20%', scrub: 1 } });
+  ScrollTrigger.create({ trigger: '.vows', start: 'top bottom', end: 'bottom top', onToggle: s => { if (fire) fire.visible = s.isActive; } });
+  gsap.from('.vows__head > *', { y: 30, opacity: 0, stagger: 0.12, scrollTrigger: { trigger: '.vows', start: 'top 80%', end: 'top 25%', scrub: 1 } });
 
-  /* gallery cover-flow */
+  /* GALLERY cover-flow */
   const track = $('.gallery__track'), gcards = $$('.gcard');
   const dist = () => track.scrollWidth - innerWidth;
   let galleryOn = false;
   gsap.to(track, {
     x: () => -dist(), ease: 'none',
-    scrollTrigger: { trigger: '.gallery', start: 'top top', end: () => '+=' + dist() * 1.2, scrub: 1, pin: true, anticipatePin: 1, invalidateOnRefresh: true,
-      onToggle: s => { galleryOn = s.isActive; },
-      onUpdate: s => gsap.set('.gallery__progress span', { scaleX: s.progress }) }
+    scrollTrigger: { trigger: '.gallery', start: 'top top', end: () => '+=' + dist() * 1.25, scrub: 1, pin: true, anticipatePin: 1, invalidateOnRefresh: true,
+      onToggle: s => { galleryOn = s.isActive; }, onUpdate: s => gsap.set('.gallery__progress span', { scaleX: s.progress }) }
   });
   const coverflow = () => {
     const cx = innerWidth / 2;
     gcards.forEach(c => {
       const r = c.getBoundingClientRect();
-      const d = gsap.utils.clamp(-1.4, 1.4, (r.left + r.width / 2 - cx) / (innerWidth * 0.75));
-      gsap.set(c, { rotateY: d * -40, z: -Math.abs(d) * 170, scale: 1 - Math.abs(d) * 0.08, opacity: 1 - Math.abs(d) * 0.35, transformPerspective: 1000 });
+      const d = gsap.utils.clamp(-1.5, 1.5, (r.left + r.width / 2 - cx) / (innerWidth * 0.7));
+      gsap.set(c, { rotateY: d * -34, z: -Math.abs(d) * 150, scale: 1 - Math.abs(d) * 0.06, filter: `brightness(${1 - Math.abs(d) * 0.35})`, transformPerspective: 1100 });
+      gsap.set(c.querySelector('img'), { xPercent: d * -8, scale: 1.12 });
     });
   };
   coverflow();
   gsap.ticker.add(() => { if (galleryOn) coverflow(); });
   gsap.from('.gallery__head', { y: 40, opacity: 0, scrollTrigger: { trigger: '.gallery', start: 'top 80%', end: 'top 20%', scrub: 1 } });
 
-  /* film */
-  gsap.fromTo('.film__frame', { rotateX: 40, scale: 0.78, y: 60, transformPerspective: 900 }, { rotateX: 0, scale: 1, y: 0, ease: 'power2.out', scrollTrigger: { trigger: '.film', start: 'top 85%', end: 'center 60%', scrub: 1 } });
+  /* FILM */
+  gsap.fromTo('.film__frame', { rotateX: 32, scale: 0.82, y: 50, transformPerspective: 900 }, { rotateX: 0, scale: 1, y: 0, ease: 'power2.out', scrollTrigger: { trigger: '.film', start: 'top 85%', end: 'center 60%', scrub: 1 } });
   gsap.from('.film h2, .film .eyebrow', { y: 40, opacity: 0, stagger: 0.1, scrollTrigger: { trigger: '.film', start: 'top 85%', end: 'top 45%', scrub: 1 } });
 
-  /* countdown */
-  gsap.from('.cd__cell', { rotateX: -90, y: 30, opacity: 0, stagger: 0.12, duration: 0.9, ease: 'back.out(1.6)', transformPerspective: 600, scrollTrigger: { trigger: '.countdown', start: 'top 75%' } });
-  gsap.from('.countdown__diyas .diya', { y: -30, opacity: 0, stagger: 0.15, duration: 0.8, ease: 'bounce.out', scrollTrigger: { trigger: '.countdown', start: 'top 80%' } });
+  /* COUNTDOWN */
+  gsap.from('.cd__cell', { y: 30, opacity: 0, stagger: 0.1, duration: 0.9, ease: 'power3.out', scrollTrigger: { trigger: '.countdown', start: 'top 78%' } });
+  gsap.from('.cd', { scaleX: 0.4, opacity: 0, duration: 1.2, ease: 'power3.out', scrollTrigger: { trigger: '.countdown', start: 'top 78%' } });
 
-  /* schedule */
-  gsap.from('.schedule__head > *', { y: 40, opacity: 0, stagger: 0.12, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: '.schedule', start: 'top 75%' } });
+  /* SCHEDULE — editorial reveals */
+  gsap.from('.sched__head > *', { y: 30, opacity: 0, stagger: 0.12, duration: 1.1, ease: 'power3.out', scrollTrigger: { trigger: '.sched', start: 'top 75%' } });
   $$('.day').forEach(day => {
-    gsap.fromTo(day.querySelector('.day__rangoli svg'), { rotate: -180, scale: 0.3, opacity: 0 }, { rotate: 90, scale: 1, opacity: 1, ease: 'none', scrollTrigger: { trigger: day, start: 'top 95%', end: 'bottom top', scrub: true } });
-    gsap.from(day.querySelector('.day__num'), { rotateY: -100, opacity: 0, duration: 1.2, ease: 'expo.out', transformPerspective: 600, scrollTrigger: { trigger: day, start: 'top 80%' } });
-    gsap.from(day.querySelector('.day__meta'), { x: 30, opacity: 0, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: day, start: 'top 80%' } });
-    gsap.to(day.querySelector('.day__line i'), { scaleY: 1, ease: 'none', scrollTrigger: { trigger: day.querySelector('.day__list'), start: 'top 75%', end: 'bottom 60%', scrub: true } });
-    day.querySelectorAll('.ev').forEach((ev, i) => {
-      gsap.fromTo(ev, { rotateX: -70, rotateZ: i % 2 ? 4 : -4, y: 80, opacity: 0, transformPerspective: 900 },
-        { rotateX: 0, rotateZ: 0, y: 0, opacity: 1, ease: 'power3.out', scrollTrigger: { trigger: ev, start: 'top 98%', end: 'top 68%', scrub: 1 } });
-      gsap.from(ev.querySelector('.ev__icon'), { scale: 0, rotate: -120, ease: 'back.out(2)', scrollTrigger: { trigger: ev, start: 'top 85%', end: 'top 65%', scrub: 1 } });
+    gsap.from(day.querySelector('.day__num span'), { yPercent: 105, duration: 1.2, ease: 'expo.out', scrollTrigger: { trigger: day, start: 'top 80%' } });
+    gsap.from(day.querySelector('.day__meta'), { x: 24, opacity: 0, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: day, start: 'top 80%' } });
+    gsap.from(day.querySelector('.day__rule'), { scaleX: 0, duration: 1.4, ease: 'power3.inOut', scrollTrigger: { trigger: day, start: 'top 78%' } });
+    day.querySelectorAll('.ev').forEach(ev => {
+      const tl = gsap.timeline({ scrollTrigger: { trigger: ev, start: 'top 86%' } });
+      tl.from(ev.querySelectorAll('.mask > *'), { yPercent: 110, duration: 1, stagger: 0.08, ease: 'expo.out' })
+        .from(ev.querySelectorAll('small, .ev__venue'), { opacity: 0, y: 8, duration: 0.8, stagger: 0.05 }, 0.3)
+        .to(ev, { '--s': 1, duration: 1.2, ease: 'power3.inOut' }, 0.1);
     });
   });
 
-  /* venue */
-  gsap.fromTo('.venue__sea .sun', { y: -10 }, { y: 70, ease: 'none', scrollTrigger: { trigger: '.venue__sea', start: 'top 85%', end: 'bottom 20%', scrub: true } });
-  gsap.from('.venue .display, .venue__addr, .venue__note', { y: 40, opacity: 0, stagger: 0.12, scrollTrigger: { trigger: '.venue', start: 'top 80%', end: 'top 40%', scrub: 1 } });
+  /* VENUE */
+  ScrollTrigger.create({ trigger: '.venue', start: 'top 160%', once: true, onEnter: () => { const f = $('.venue__map iframe'); f.src = f.dataset.src; } });
+  gsap.from('.venue__map', { clipPath: 'inset(100% 0 0 0)', duration: 1.4, ease: 'expo.inOut', scrollTrigger: { trigger: '.venue__map', start: 'top 85%' } });
+  gsap.from('.venue .display, .venue__addr, .venue .eyebrow', { y: 30, opacity: 0, stagger: 0.1, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: '.venue', start: 'top 78%' } });
 
-  /* hashtag */
-  gsap.to('.tag__rangoli svg', { rotate: 180, ease: 'none', scrollTrigger: { trigger: '.tag', start: 'top bottom', end: 'bottom top', scrub: true } });
-  gsap.from('.tag__word', { scale: 0.5, rotateX: 70, opacity: 0, transformPerspective: 700, ease: 'power3.out', scrollTrigger: { trigger: '.tag', start: 'top 80%', end: 'center 60%', scrub: 1 } });
+  /* HASHTAG */
+  gsap.fromTo('.tag__mandala .draw', { strokeDashoffset: (i, el) => el.style.getPropertyValue('--len') || 600 }, { strokeDashoffset: 0, stagger: 0.004, ease: 'none', scrollTrigger: { trigger: '.tag', start: 'top 85%', end: 'bottom 60%', scrub: 1 } });
+  gsap.from('.tag__word', { y: 40, opacity: 0, letterSpacing: '0.2em', duration: 1.4, ease: 'expo.out', scrollTrigger: { trigger: '.tag', start: 'top 70%' } });
 
-  /* footer */
-  gsap.from('.foot > *:not(.foot__toran)', { y: 30, opacity: 0, stagger: 0.12, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: '.foot', start: 'top 80%' } });
+  /* FOOTER */
+  gsap.from('.foot > *', { y: 24, opacity: 0, stagger: 0.12, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: '.foot', start: 'top 82%' } });
 
-  ScrollTrigger.create({ trigger: '.schedule', start: 'top 60%', end: 'bottom 40%', onToggle: s => { if (petals) gsap.to(petals, { density: s.isActive ? 0.55 : 1, duration: 1 }); } });
+  /* bokeh: quieter over the light, text-heavy sections */
+  $$('.paper').forEach(p => ScrollTrigger.create({ trigger: p, start: 'top 50%', end: 'bottom 50%', onToggle: s => { if (bokeh) gsap.to(bokeh, { alpha: s.isActive ? 0.55 : 1, duration: 0.8 }); } }));
 }
 
 if (!reduce) scenes();
-else if (palace) { palace.intro = 1; }
 addEventListener('load', () => ScrollTrigger.refresh());
