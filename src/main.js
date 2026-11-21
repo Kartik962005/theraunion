@@ -41,50 +41,14 @@ addEventListener('orientationchange', () => setTimeout(() => { setVH(); ScrollTr
 $$('[data-linemandala]').forEach(el => { el.innerHTML = lineMandala(); });
 $$('.draw').forEach(p => { try { p.style.setProperty('--len', Math.ceil(p.getTotalLength())); } catch {} });
 
-/* ---------- hero: the reel, framed at its own 4:5 shape so nothing is cropped ---------- */
+/* ---------- hero video (portrait for phones, landscape for wide screens) ---------- */
 const heroVideo = $('#heroVideo');
-const soundBtn = $('#soundBtn');
-const sizeHero = () => {
-  const fw = Math.min(innerWidth - 40, innerHeight * 0.46, 480);
-  const hero = $('.hero');
-  hero.style.setProperty('--fw', `${Math.round(fw)}px`);
-  hero.style.setProperty('--fh', `${Math.round(fw * 1.25)}px`);
-};
-sizeHero();
-const hiRes = (devicePixelRatio || 1) * Math.min(innerWidth - 40, innerHeight * 0.46, 480) > 760 && !(navigator.connection && navigator.connection.saveData);
-heroVideo.src = hiRes ? 'media/reel-1080.mp4' : 'media/reel-720.mp4';
+const portrait = innerWidth / innerHeight < 1;
+heroVideo.poster = portrait ? 'media/hero-portrait.jpg' : 'media/hero-landscape.jpg';
+heroVideo.src = portrait ? 'media/hero-portrait.mp4' : 'media/hero-landscape.mp4';
 heroVideo.muted = true;
-let wantSound = true;
-const setSoundUI = () => {
-  const on = !heroVideo.muted;
-  soundBtn.classList.toggle('muted', !on);
-  soundBtn.querySelector('.sound__label').textContent = on ? 'Sound on' : 'Sound off';
-  soundBtn.setAttribute('aria-pressed', String(on));
-  soundBtn.setAttribute('aria-label', on ? 'Mute the music' : 'Play the music');
-};
 const playHero = () => { const p = heroVideo.play(); if (p) p.catch(() => {}); };
-// called inside the seal tap, so browsers allow sound
-const startReel = () => {
-  heroVideo.currentTime = 0;
-  heroVideo.muted = false; heroVideo.volume = 1;
-  const p = heroVideo.play();
-  if (p) p.catch(() => { heroVideo.muted = true; wantSound = false; setSoundUI(); playHero(); });
-  setSoundUI();
-  soundBtn.classList.add('show');
-};
-soundBtn.addEventListener('click', () => {
-  heroVideo.muted = !heroVideo.muted; wantSound = !heroVideo.muted;
-  if (heroVideo.paused) playHero();
-  setSoundUI();
-});
-const leaveHero = () => {
-  soundBtn.classList.remove('show');
-  gsap.to(heroVideo, { volume: 0, duration: 0.6, onComplete: () => heroVideo.pause() });
-};
-const enterHero = () => {
-  heroVideo.volume = 1; heroVideo.muted = !wantSound; setSoundUI();
-  playHero(); soundBtn.classList.add('show');
-};
+playHero();
 
 /* ---------- schedule (editorial) ---------- */
 $('#days').innerHTML = DAYS.map(d => `
@@ -173,14 +137,15 @@ $('#shareBtn').addEventListener('click', async () => {
   else { await copy(data.url); toast('Link copied · theraunion.online'); }
 });
 
-/* ---------- film ---------- */
+/* ---------- film: the reel, with its song ---------- */
 const video = $('#filmVideo'), playBtn = $('#filmPlay');
 playBtn.addEventListener('click', () => {
   if (!video.src) {
-    const big = Math.max(screen.width, screen.height) * (devicePixelRatio || 1) >= 1700 && !isMobile && !(navigator.connection && navigator.connection.saveData);
-    video.src = big ? 'media/film-1080.mp4' : 'media/film-720.mp4';
+    const hi = (devicePixelRatio || 1) * Math.min(innerWidth, 420) > 760 && !(navigator.connection && navigator.connection.saveData);
+    video.src = hi ? 'media/reel-1080.mp4' : 'media/reel-720.mp4';
   }
-  video.controls = true; video.play();
+  if (!heroVideo.paused) heroVideo.pause();
+  video.muted = false; video.controls = true; video.play();
 });
 video.addEventListener('play', () => playBtn.classList.add('is-hidden'));
 
@@ -212,7 +177,7 @@ gsap.timeline({ delay: 0.25 })
 
 function openGate() {
   seal.disabled = true; seal.dataset.opened = '1';
-  startReel();
+  playHero();
   if (navigator.vibrate) navigator.vibrate(15);
   const tl = gsap.timeline({ defaults: { ease: 'power3.inOut' } });
   tl.to(seal, { scale: 0.86, duration: 0.18, ease: 'power2.out' })
@@ -229,7 +194,7 @@ seal.addEventListener('click', openGate);
 
 function heroIntro() {
   const tl = gsap.timeline();
-  tl.fromTo('.hero__frame', { opacity: 0, scale: 0.92 }, { opacity: 1, scale: 1, duration: 1.8, ease: 'power3.out' }, 0)
+  tl.fromTo('.hero__video', { scale: 1.18 }, { scale: 1, duration: 3.2, ease: 'power2.out' }, 0)
     .from('.hx__mantra', { opacity: 0, y: -12, duration: 1 }, 0.3)
     .from('.hx__eyebrow', { opacity: 0, letterSpacing: '1em', duration: 1.4, ease: 'power3.out' }, 0.4)
     .from('.hx__names .char', { yPercent: 110, opacity: 0, duration: 1.2, stagger: 0.05, ease: 'expo.out' }, 0.6)
@@ -251,7 +216,6 @@ function sizeRoad() {
 }
 sizeRoad();
 ScrollTrigger.addEventListener('refreshInit', sizeRoad);
-ScrollTrigger.addEventListener('refreshInit', sizeHero);
 gsap.set(['.road__world', '.hero__lines'], { x: 0, y: 0, xPercent: -50, yPercent: -50 });
 gsap.set('.road__car', { x: 0, y: 0, xPercent: -50 });
 
@@ -261,9 +225,9 @@ function scenes() {
   /* HERO: film folds into an arch window */
   const archW = () => Math.min(innerWidth * 0.68, innerWidth > 900 ? 440 : 360);
   const ht = gsap.timeline({ scrollTrigger: { trigger: '.hero', start: 'top top', end: () => '+=' + innerHeight * 3, scrub: 1.4, pin: true, anticipatePin: 1, invalidateOnRefresh: true,
-    onLeave: leaveHero, onEnterBack: enterHero } });
+    onLeave: () => heroVideo.pause(), onEnterBack: playHero } });
   ht.to('.hero__cue', { opacity: 0, duration: 0.2 }, 0)
-    .to('.hx--a, .hx__mantra', { y: -30, opacity: 0, duration: 0.4, ease: 'power2.in' }, 0)
+    .to('.hx--a', { yPercent: -18, opacity: 0, duration: 0.45, ease: 'power2.in' }, 0)
     .to('.hero__frame', { top: '44%', width: archW, height: () => innerHeight * 0.5, borderRadius: () => `${archW() / 2}px ${archW() / 2}px 0px 0px`, duration: 0.65, ease: 'power3.inOut' }, 0.2)
     .to('.hero__shade', { opacity: 0.25, duration: 0.5 }, 0.3)
     .fromTo('.hero__lines', { opacity: 0, scale: 1.08 }, { opacity: 1, scale: 1, duration: 0.4 }, 0.7)
