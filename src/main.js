@@ -1,17 +1,18 @@
-import '@fontsource/cormorant-garamond/300.css';
-import '@fontsource/cormorant-garamond/400.css';
-import '@fontsource/cormorant-garamond/400-italic.css';
-import '@fontsource/cormorant-garamond/500.css';
-import '@fontsource/cormorant-garamond/500-italic.css';
-import '@fontsource/cinzel/400.css';
-import '@fontsource/pinyon-script/400.css';
-import '@fontsource/tiro-devanagari-hindi/400.css';
+import '@fontsource/cormorant-garamond/latin-300.css';
+import '@fontsource/cormorant-garamond/latin-400.css';
+import '@fontsource/cormorant-garamond/latin-400-italic.css';
+import '@fontsource/cormorant-garamond/latin-500.css';
+import '@fontsource/cormorant-garamond/latin-500-italic.css';
+import '@fontsource/cinzel/latin-400.css';
+import '@fontsource/pinyon-script/latin-400.css';
+import '@fontsource/tiro-devanagari-hindi/devanagari-400.css';
+import '@fontsource/tiro-devanagari-hindi/latin-400.css';
 import './style.css';
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
-import { createBokeh } from './gl.js';
+import { createSparkles } from './sparkles.js';
 import { DAYS, VOWS, WEDDING_MOMENT } from './data.js';
 import { lineMandala } from './ornaments.js';
 
@@ -40,14 +41,50 @@ addEventListener('orientationchange', () => setTimeout(() => { setVH(); ScrollTr
 $$('[data-linemandala]').forEach(el => { el.innerHTML = lineMandala(); });
 $$('.draw').forEach(p => { try { p.style.setProperty('--len', Math.ceil(p.getTotalLength())); } catch {} });
 
-/* ---------- hero video (portrait for phones, landscape for wide screens) ---------- */
+/* ---------- hero: the reel, framed at its own 4:5 shape so nothing is cropped ---------- */
 const heroVideo = $('#heroVideo');
-const portrait = innerWidth / innerHeight < 1;
-heroVideo.poster = portrait ? 'media/hero-portrait.jpg' : 'media/hero-landscape.jpg';
-heroVideo.src = portrait ? 'media/hero-portrait.mp4' : 'media/hero-landscape.mp4';
+const soundBtn = $('#soundBtn');
+const sizeHero = () => {
+  const fw = Math.min(innerWidth - 40, innerHeight * 0.46, 480);
+  const hero = $('.hero');
+  hero.style.setProperty('--fw', `${Math.round(fw)}px`);
+  hero.style.setProperty('--fh', `${Math.round(fw * 1.25)}px`);
+};
+sizeHero();
+const hiRes = (devicePixelRatio || 1) * Math.min(innerWidth - 40, innerHeight * 0.46, 480) > 760 && !(navigator.connection && navigator.connection.saveData);
+heroVideo.src = hiRes ? 'media/reel-1080.mp4' : 'media/reel-720.mp4';
 heroVideo.muted = true;
+let wantSound = true;
+const setSoundUI = () => {
+  const on = !heroVideo.muted;
+  soundBtn.classList.toggle('muted', !on);
+  soundBtn.querySelector('.sound__label').textContent = on ? 'Sound on' : 'Sound off';
+  soundBtn.setAttribute('aria-pressed', String(on));
+  soundBtn.setAttribute('aria-label', on ? 'Mute the music' : 'Play the music');
+};
 const playHero = () => { const p = heroVideo.play(); if (p) p.catch(() => {}); };
-playHero();
+// called inside the seal tap, so browsers allow sound
+const startReel = () => {
+  heroVideo.currentTime = 0;
+  heroVideo.muted = false; heroVideo.volume = 1;
+  const p = heroVideo.play();
+  if (p) p.catch(() => { heroVideo.muted = true; wantSound = false; setSoundUI(); playHero(); });
+  setSoundUI();
+  soundBtn.classList.add('show');
+};
+soundBtn.addEventListener('click', () => {
+  heroVideo.muted = !heroVideo.muted; wantSound = !heroVideo.muted;
+  if (heroVideo.paused) playHero();
+  setSoundUI();
+});
+const leaveHero = () => {
+  soundBtn.classList.remove('show');
+  gsap.to(heroVideo, { volume: 0, duration: 0.6, onComplete: () => heroVideo.pause() });
+};
+const enterHero = () => {
+  heroVideo.volume = 1; heroVideo.muted = !wantSound; setSoundUI();
+  playHero(); soundBtn.classList.add('show');
+};
 
 /* ---------- schedule (editorial) ---------- */
 $('#days').innerHTML = DAYS.map(d => `
@@ -149,7 +186,7 @@ video.addEventListener('play', () => playBtn.classList.add('is-hidden'));
 
 /* ---------- WebGL ---------- */
 let bokeh = null;
-try { bokeh = createBokeh($('#gl')); } catch (e) { console.warn('bokeh off', e); }
+try { bokeh = createSparkles($('#gl')); } catch (e) { console.warn('sparkles off', e); }
 
 /* ---------- smooth scroll ---------- */
 const lenis = new Lenis({ lerp: 0.075, smoothWheel: true, wheelMultiplier: 0.7, touchMultiplier: 1, syncTouch: false });
@@ -175,7 +212,7 @@ gsap.timeline({ delay: 0.25 })
 
 function openGate() {
   seal.disabled = true; seal.dataset.opened = '1';
-  playHero();
+  startReel();
   if (navigator.vibrate) navigator.vibrate(15);
   const tl = gsap.timeline({ defaults: { ease: 'power3.inOut' } });
   tl.to(seal, { scale: 0.86, duration: 0.18, ease: 'power2.out' })
@@ -192,7 +229,7 @@ seal.addEventListener('click', openGate);
 
 function heroIntro() {
   const tl = gsap.timeline();
-  tl.fromTo('.hero__video', { scale: 1.18 }, { scale: 1, duration: 3.2, ease: 'power2.out' }, 0)
+  tl.fromTo('.hero__frame', { opacity: 0, scale: 0.92 }, { opacity: 1, scale: 1, duration: 1.8, ease: 'power3.out' }, 0)
     .from('.hx__mantra', { opacity: 0, y: -12, duration: 1 }, 0.3)
     .from('.hx__eyebrow', { opacity: 0, letterSpacing: '1em', duration: 1.4, ease: 'power3.out' }, 0.4)
     .from('.hx__names .char', { yPercent: 110, opacity: 0, duration: 1.2, stagger: 0.05, ease: 'expo.out' }, 0.6)
@@ -214,6 +251,7 @@ function sizeRoad() {
 }
 sizeRoad();
 ScrollTrigger.addEventListener('refreshInit', sizeRoad);
+ScrollTrigger.addEventListener('refreshInit', sizeHero);
 gsap.set(['.road__world', '.hero__lines'], { x: 0, y: 0, xPercent: -50, yPercent: -50 });
 gsap.set('.road__car', { x: 0, y: 0, xPercent: -50 });
 
@@ -223,9 +261,9 @@ function scenes() {
   /* HERO: film folds into an arch window */
   const archW = () => Math.min(innerWidth * 0.68, innerWidth > 900 ? 440 : 360);
   const ht = gsap.timeline({ scrollTrigger: { trigger: '.hero', start: 'top top', end: () => '+=' + innerHeight * 3, scrub: 1.4, pin: true, anticipatePin: 1, invalidateOnRefresh: true,
-    onLeave: () => heroVideo.pause(), onEnterBack: playHero } });
+    onLeave: leaveHero, onEnterBack: enterHero } });
   ht.to('.hero__cue', { opacity: 0, duration: 0.2 }, 0)
-    .to('.hx--a', { yPercent: -18, opacity: 0, duration: 0.45, ease: 'power2.in' }, 0)
+    .to('.hx--a, .hx__mantra', { y: -30, opacity: 0, duration: 0.4, ease: 'power2.in' }, 0)
     .to('.hero__frame', { top: '44%', width: archW, height: () => innerHeight * 0.5, borderRadius: () => `${archW() / 2}px ${archW() / 2}px 0px 0px`, duration: 0.65, ease: 'power3.inOut' }, 0.2)
     .to('.hero__shade', { opacity: 0.25, duration: 0.5 }, 0.3)
     .fromTo('.hero__lines', { opacity: 0, scale: 1.08 }, { opacity: 1, scale: 1, duration: 0.4 }, 0.7)
@@ -288,26 +326,26 @@ function scenes() {
   });
   gsap.from('.vows__head > *', { y: 40, opacity: 0, stagger: 0.12, scrollTrigger: { trigger: '.vows', start: 'top 80%', end: 'top 20%', scrub: 1 } });
 
-  /* GALLERY cover-flow */
-  const track = $('.gallery__track'), gcards = $$('.gcard');
+  /* GALLERY cover-flow (positions computed from cached offsets — no per-frame layout reads) */
+  const track = $('.gallery__track'), gcards = $$('.gcard'), gimgs = gcards.map(c => c.querySelector('img'));
+  let centers = [];
+  const measure = () => { centers = gcards.map(c => c.offsetLeft + c.offsetWidth / 2); };
+  measure(); ScrollTrigger.addEventListener('refresh', measure);
   const dist = () => track.scrollWidth - innerWidth;
-  let galleryOn = false;
-  gsap.to(track, {
-    x: () => -dist(), ease: 'none',
-    scrollTrigger: { trigger: '.gallery', start: 'top top', end: () => '+=' + dist() * 1.6, scrub: 1.4, pin: true, anticipatePin: 1, invalidateOnRefresh: true,
-      onToggle: s => { galleryOn = s.isActive; }, onUpdate: s => gsap.set('.gallery__progress span', { scaleX: s.progress }) }
-  });
   const coverflow = () => {
-    const cx = innerWidth / 2;
-    gcards.forEach(c => {
-      const r = c.getBoundingClientRect();
-      const d = gsap.utils.clamp(-1.5, 1.5, (r.left + r.width / 2 - cx) / (innerWidth * 0.7));
-      gsap.set(c, { rotateY: d * -34, z: -Math.abs(d) * 150, scale: 1 - Math.abs(d) * 0.06, opacity: 1 - Math.abs(d) * 0.3, transformPerspective: 1100, force3D: true });
-      gsap.set(c.querySelector('img'), { xPercent: d * -8, scale: 1.12 });
-    });
+    const x = gsap.getProperty(track, 'x') || 0, cx = innerWidth / 2;
+    for (let i = 0; i < gcards.length; i++) {
+      const d = gsap.utils.clamp(-1.5, 1.5, (centers[i] + x - cx) / (innerWidth * 0.7));
+      gsap.set(gcards[i], { rotateY: d * -34, z: -Math.abs(d) * 150, scale: 1 - Math.abs(d) * 0.06, opacity: 1 - Math.abs(d) * 0.3, transformPerspective: 1100, force3D: true });
+      gsap.set(gimgs[i], { xPercent: d * -8, scale: 1.12 });
+    }
   };
+  gsap.to(track, {
+    x: () => -dist(), ease: 'none', onUpdate: coverflow,
+    scrollTrigger: { trigger: '.gallery', start: 'top top', end: () => '+=' + dist() * 1.6, scrub: 1.4, pin: true, anticipatePin: 1, invalidateOnRefresh: true,
+      onUpdate: s => gsap.set('.gallery__progress span', { scaleX: s.progress }) }
+  });
   coverflow();
-  gsap.ticker.add(() => { if (galleryOn) coverflow(); });
   gsap.from('.gallery__head', { y: 40, opacity: 0, scrollTrigger: { trigger: '.gallery', start: 'top 80%', end: 'top 20%', scrub: 1 } });
 
   /* FILM */
@@ -321,14 +359,14 @@ function scenes() {
   /* SCHEDULE — editorial reveals */
   gsap.from('.sched__head > *', { y: 30, opacity: 0, stagger: 0.12, duration: 1.1, ease: 'power3.out', scrollTrigger: { trigger: '.sched', start: 'top 75%' } });
   $$('.day').forEach(day => {
-    gsap.from(day.querySelector('.day__num span'), { yPercent: 105, duration: 1.2, ease: 'expo.out', scrollTrigger: { trigger: day, start: 'top 80%' } });
-    gsap.from(day.querySelector('.day__meta'), { x: 24, opacity: 0, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: day, start: 'top 80%' } });
-    gsap.from(day.querySelector('.day__rule'), { scaleX: 0, duration: 1.4, ease: 'power3.inOut', scrollTrigger: { trigger: day, start: 'top 78%' } });
+    gsap.from(day.querySelector('.day__num span'), { yPercent: 100, duration: 0.8, ease: 'power4.out', scrollTrigger: { trigger: day, start: 'top 92%' } });
+    gsap.from(day.querySelector('.day__meta'), { x: 18, opacity: 0, duration: 0.7, ease: 'power3.out', scrollTrigger: { trigger: day, start: 'top 92%' } });
+    gsap.from(day.querySelector('.day__rule'), { scaleX: 0, duration: 0.9, ease: 'power3.inOut', scrollTrigger: { trigger: day, start: 'top 90%' } });
     day.querySelectorAll('.ev').forEach(ev => {
-      const tl = gsap.timeline({ scrollTrigger: { trigger: ev, start: 'top 86%' } });
-      tl.from(ev.querySelectorAll('.mask > *'), { yPercent: 110, duration: 1, stagger: 0.08, ease: 'expo.out' })
-        .from(ev.querySelectorAll('small, .ev__venue'), { opacity: 0, y: 8, duration: 0.8, stagger: 0.05 }, 0.3)
-        .to(ev, { '--s': 1, duration: 1.2, ease: 'power3.inOut' }, 0.1);
+      const tl = gsap.timeline({ scrollTrigger: { trigger: ev, start: 'top 96%' } });
+      tl.from(ev.querySelectorAll('.mask > *'), { yPercent: 105, duration: 0.65, stagger: 0.05, ease: 'power3.out' })
+        .from(ev.querySelectorAll('small, .ev__venue'), { opacity: 0, y: 6, duration: 0.5, stagger: 0.04 }, 0.12)
+        .to(ev, { '--s': 1, duration: 0.8, ease: 'power3.inOut' }, 0.05);
     });
   });
 
